@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/LoginPage.dart';
+
 
 void main() {
   runApp(const MyTripWebsite());
@@ -6,7 +8,8 @@ void main() {
 
 class MyTripWebsite extends StatelessWidget {
   const MyTripWebsite({super.key});
-
+  
+  
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -15,25 +18,62 @@ class MyTripWebsite extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const HomePage(),
+      initialRoute: '/',
       routes: {
-        '/home': (context) => const HomePage(),
+        '/': (context) => const HomePage(),
         '/explore': (context) => const ExplorePage(),
         '/popular': (context) => const PopularDestinationsPage(),
         '/about': (context) => const AboutPage(),
+        '/login': (context) => LoginPage()
       },
     );
   }
 }
 
-class HomePage extends StatelessWidget {
+
+BottomNavigationBar _buildBottomNavigationBar(BuildContext context, int currentIndex) {
+  return BottomNavigationBar(
+    currentIndex: currentIndex,
+    onTap: (index) {
+      if (index == 0) {
+        Navigator.of(context).pushReplacementNamed('/');
+      } else if (index == 1) {
+        Navigator.of(context).pushReplacementNamed('/explore');
+      } else if (index == 2) {
+        Navigator.of(context).pushReplacementNamed('/popular');
+      } else if (index == 3) {
+        Navigator.of(context).pushReplacementNamed('/about');
+      }
+    },
+    items: const [
+      BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+      BottomNavigationBarItem(icon: Icon(Icons.explore), label: 'Explorar'),
+      BottomNavigationBarItem(icon: Icon(Icons.star), label: 'Populares'),
+      BottomNavigationBarItem(icon: Icon(Icons.info), label: 'Sobre'),
+    ],
+    selectedItemColor: Colors.yellow[700],  // Mantém o item selecionado com cor amarela
+    unselectedItemColor: Colors.blue[900],  // Define os ícones dos itens não selecionados para azul
+    unselectedLabelStyle: TextStyle(color: Colors.blue[900]), // Define o texto dos itens não selecionados para azul
+    showUnselectedLabels: true,  // Mostra o texto dos itens não selecionados
+  );
+}
+
+
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  int _currentIndex = 0; 
+
+  @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return  Scaffold(
       appBar: CustomAppBar(),
-      body: SingleChildScrollView(
+      body: const SingleChildScrollView(
         child: Column(
           children: [
             HeaderSection(),
@@ -45,9 +85,11 @@ class HomePage extends StatelessWidget {
           ],
         ),
       ),
+      bottomNavigationBar: _buildBottomNavigationBar(context, _currentIndex),
     );
   }
 }
+
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   const CustomAppBar({super.key});
@@ -75,25 +117,18 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                // Botões de navegação
-                Row(
-                  children: [
-                    _buildNavButton(context, 'Home', '/home'),
-                    _buildNavButton(context, 'Explorar', '/explore'),
-                    _buildNavButton(context, 'Destinos Populares', '/popular'),
-                    _buildNavButton(context, 'Sobre', '/about'),
-                    // Botão de login
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                      onPressed: () {},
-                      child: const Text('Fazer login'),
+                // Botão de login
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue[900],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                  ],
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pushNamed("/login");
+                  },
+                  child: const Text('Fazer login', style: TextStyle(color: Colors.orange),),
                 ),
               ],
             ),
@@ -103,7 +138,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  width: 600,
+                  width: MediaQuery.of(context).size.width * 0.7, 
                   height: 40,
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   decoration: BoxDecoration(
@@ -114,9 +149,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                     children: [
                       const Icon(Icons.search, color: Colors.grey),
                       const SizedBox(width: 10),
-                      const Expanded(
+                      Expanded(
                         child: TextField(
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             border: InputBorder.none,
                             hintText: 'Lugares para ir, o que fazer, hotéis...',
                           ),
@@ -130,7 +165,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                           ),
                         ),
                         onPressed: () {},
-                        child: const Text('Buscar'),
+                        child: const FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text('Buscar'),
+                        ),
                       ),
                     ],
                   ),
@@ -139,18 +177,6 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildNavButton(BuildContext context, String title, String route) {
-    return TextButton(
-      onPressed: () {
-        Navigator.pushNamed(context, route);
-      },
-      child: Text(
-        title,
-        style: const TextStyle(color: Colors.black, fontSize: 16),
       ),
     );
   }
@@ -169,7 +195,7 @@ class HeaderSection extends StatelessWidget {
       decoration: BoxDecoration(
         image: DecorationImage(
           image: const AssetImage(
-              'assets/place1.jpg'), // Adicione uma imagem de fundo que remete a Belo Horizonte
+              'assets/belohorizonte2.jpg'), // Adicione uma imagem de fundo que remete a Belo Horizonte
           fit: BoxFit.cover,
           colorFilter: ColorFilter.mode(
             Colors.black.withOpacity(
@@ -186,7 +212,7 @@ class HeaderSection extends StatelessWidget {
             style: const TextStyle(
               fontSize: 50,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: Colors.orange,
               letterSpacing: 2.0,
             ),
             children: <TextSpan>[
@@ -195,13 +221,7 @@ class HeaderSection extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 50,
                   fontWeight: FontWeight.bold,
-                  foreground: Paint()
-                    ..shader = const LinearGradient(
-                      colors: <Color>[
-                        Colors.lightBlueAccent,
-                        Colors.cyanAccent,
-                      ],
-                    ).createShader(const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0)),
+                  color: Colors.blue[900]
                 ),
               ),
               const TextSpan(
@@ -209,7 +229,7 @@ class HeaderSection extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.w300,
-                  color: Colors.white,
+                  color: Colors.orange,
                 ),
               ),
             ],
@@ -228,7 +248,7 @@ class MapImageSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       child: Image.asset(
-        'maps.jpeg',
+        'assets/maps.jpeg',
         height: 400,
         width: double.infinity,
         fit: BoxFit.cover,
@@ -297,12 +317,13 @@ class ServiceCard extends StatelessWidget {
       elevation: 5,
       child: Container(
         padding: const EdgeInsets.all(16),
-        width: 250,
+        width: MediaQuery.of(context).size.width * 0.25,
         child: Column(
           children: [
             Icon(icon, size: 60, color: Colors.blue),
             const SizedBox(height: 10),
             Text(title,
+                textAlign: TextAlign.center,
                 style:
                     const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
@@ -333,13 +354,10 @@ class PopularDestinationsSection extends StatelessWidget {
             spacing: 20,
             runSpacing: 20,
             children: [
-              DestinationCard(
-                  imageUrl: 'assets/place1.jpeg', title: 'Igreja da Pampulha'),
+              DestinationCard(imageUrl: 'assets/place1.jpeg', title: 'Igreja da Pampulha'),
               DestinationCard(imageUrl: 'assets/place2.jpeg', title: 'Savassi'),
-              DestinationCard(
-                  imageUrl: 'assets/place3.jpeg', title: 'Parque Guanabara'),
-              DestinationCard(
-                  imageUrl: 'assets/mineirao.jpg', title: 'Mineirão'),
+              DestinationCard(imageUrl: 'assets/place3.jpeg', title: 'Parque Guanabara'),
+              DestinationCard(imageUrl: 'assets/mineirao.jpg', title: 'Mineirão'),
             ],
           ),
         ],
@@ -455,6 +473,8 @@ class ExplorePage extends StatefulWidget {
 }
 
 class _ExplorePageState extends State<ExplorePage> {
+  final int _currentIndex = 1;  
+
   List<Place> places = [
     Place(name: 'Igreja da Pampulha', category: 'Cultural', rating: 4.8),
     Place(name: 'Parque Municipal', category: 'Parque', rating: 4.5),
@@ -561,6 +581,8 @@ class _ExplorePageState extends State<ExplorePage> {
           ),
         ],
       ),
+
+      bottomNavigationBar: _buildBottomNavigationBar(context, _currentIndex)
     );
   }
 }
@@ -579,9 +601,9 @@ class PopularDestinationsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       appBar: CustomAppBar(),
-      body: SingleChildScrollView(
+      body: const SingleChildScrollView(
         child: Column(
           children: [
             Padding(
@@ -622,6 +644,7 @@ class PopularDestinationsPage extends StatelessWidget {
           ],
         ),
       ),
+      bottomNavigationBar: _buildBottomNavigationBar(context, 2),
     );
   }
 }
@@ -724,9 +747,9 @@ class AboutPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      appBar: CustomAppBar(),
-      body: SingleChildScrollView(
+    return  Scaffold(
+      appBar: const CustomAppBar(),
+      body: const SingleChildScrollView(
         child: Padding(
           padding: EdgeInsets.all(20.0),
           child: Column(
@@ -772,6 +795,7 @@ class AboutPage extends StatelessWidget {
           ),
         ),
       ),
+      bottomNavigationBar: _buildBottomNavigationBar(context, 3),
     );
   }
 }
