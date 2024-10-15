@@ -163,10 +163,7 @@ class _LoginPageState extends State<LoginPage>{
           ),
         ),
         
-        bottomNavigationBar: BottomNavigationBar(
-          items: <BottomNavigationBarItem> [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Minha Conta')]),
+        
     );
   }
 
