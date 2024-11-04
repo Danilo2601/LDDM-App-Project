@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/LoginPage.dart';
+import 'package:flutter_application_1/review_page.dart';
+import 'package:flutter_application_1/user_profile_screen.dart';
 
 
 void main() {
@@ -24,7 +26,9 @@ class MyTripWebsite extends StatelessWidget {
         '/explore': (context) => const ExplorePage(),
         '/popular': (context) => const PopularDestinationsPage(),
         '/about': (context) => const AboutPage(),
-        '/login': (context) => LoginPage()
+        '/login': (context) => LoginPage(),
+        '/search': (context) => ReviewScreen(),  // Supondo que seja o arquivo review_page.dart
+        '/profile': (context) =>  UserProfileScreen(), // Referenciando o arquivo de perfil
       },
     );
   }
@@ -35,14 +39,25 @@ BottomNavigationBar _buildBottomNavigationBar(BuildContext context, int currentI
   return BottomNavigationBar(
     currentIndex: currentIndex,
     onTap: (index) {
-      if (index == 0) {
-        Navigator.of(context).pushReplacementNamed('/');
-      } else if (index == 1) {
-        Navigator.of(context).pushReplacementNamed('/explore');
-      } else if (index == 2) {
-        Navigator.of(context).pushReplacementNamed('/popular');
-      } else if (index == 3) {
-        Navigator.of(context).pushReplacementNamed('/about');
+      switch (index) {
+        case 0:
+          Navigator.of(context).pushReplacementNamed('/');
+          break;
+        case 1:
+          Navigator.of(context).pushReplacementNamed('/explore');
+          break;
+        case 2:
+          Navigator.of(context).pushReplacementNamed('/popular');
+          break;
+        case 3:
+          Navigator.of(context).pushReplacementNamed('/about');
+          break;
+        case 4:
+          Navigator.of(context).pushReplacementNamed('/search'); // Redireciona para ReviewPage
+          break;
+        case 5:
+          Navigator.of(context).pushReplacementNamed('/profile'); // Redireciona para ProfilePage
+          break;
       }
     },
     items: const [
@@ -50,13 +65,16 @@ BottomNavigationBar _buildBottomNavigationBar(BuildContext context, int currentI
       BottomNavigationBarItem(icon: Icon(Icons.explore), label: 'Explorar'),
       BottomNavigationBarItem(icon: Icon(Icons.star), label: 'Populares'),
       BottomNavigationBarItem(icon: Icon(Icons.info), label: 'Sobre'),
+      BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Pesquisa'), // Ícone de Pesquisa
+      BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),   // Ícone de Perfil
     ],
-    selectedItemColor: Colors.yellow[700],  // Mantém o item selecionado com cor amarela
-    unselectedItemColor: Colors.blue[900],  // Define os ícones dos itens não selecionados para azul
-    unselectedLabelStyle: TextStyle(color: Colors.blue[900]), // Define o texto dos itens não selecionados para azul
-    showUnselectedLabels: true,  // Mostra o texto dos itens não selecionados
+    selectedItemColor: Colors.yellow[700],
+    unselectedItemColor: Colors.blue[900],
+    unselectedLabelStyle: TextStyle(color: Colors.blue[900]),
+    showUnselectedLabels: true,
   );
 }
+
 
 
 class HomePage extends StatefulWidget {
@@ -848,6 +866,5 @@ class TeamMember extends StatelessWidget {
     );
   }
 }
-
 
 
