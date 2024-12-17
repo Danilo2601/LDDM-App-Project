@@ -982,6 +982,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
           ],
         ),
       ),
+      bottomNavigationBar: _buildBottomNavigationBar(context, 4),
     );
   }
 }
@@ -1126,6 +1127,7 @@ class UserProfileScreen extends StatelessWidget {
           ],
         ),
       ),
+            bottomNavigationBar: _buildBottomNavigationBar(context, 5),
       backgroundColor: Colors.blue.shade900,
     );
   }
