@@ -869,6 +869,9 @@ class TeamMember extends StatelessWidget {
 
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> parent of d49935c (adicionando dependência do sqflite e a parte do diego)
 class ReviewScreen extends StatefulWidget {
   @override
   _ReviewScreenState createState() => _ReviewScreenState();
@@ -1161,5 +1164,8 @@ class UserProfileScreen extends StatelessWidget {
     );
   }
 }
+<<<<<<< HEAD
 =======
 >>>>>>> parent of 04c8eab (Merge branch 'main' of https://github.com/Danilo2601/LDDM-App-Project)
+=======
+>>>>>>> parent of d49935c (adicionando dependência do sqflite e a parte do diego)
