@@ -365,28 +365,30 @@ class _MapImageSectionState extends State<MapImageSection> {
     {'name': 'Café com Letras', 'category': 'Gastronomia', 'latLng': LatLng(-19.9328, -43.9295)},
   ];
 
+  // Cores para as categorias
+  final Map<String, Color> legendColors = {
+    'Cultural': Colors.blue,
+    'Parque': Colors.green,
+    'Compras': Colors.purple,
+    'Histórico': Colors.orange,
+    'Esportivo': Colors.red,
+    'Natureza': Colors.teal,
+    'Vida Noturna': Colors.pink,
+    'Gastronomia': Colors.yellow,
+  };
+
   // Função para determinar a cor dos marcadores com base na categoria
   BitmapDescriptor _getMarkerColor(String category) {
-    switch (category) {
-      case 'Cultural':
-        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure);
-      case 'Parque':
-        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
-      case 'Compras':
-        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
-      case 'Histórico':
-        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange);
-      case 'Esportivo':
-        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
-      case 'Natureza':
-        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan);
-      case 'Vida Noturna':
-        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet);
-      case 'Gastronomia':
-        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow);
-      default:
-        return BitmapDescriptor.defaultMarker; // Cor padrão
-    }
+    final color = legendColors[category] ?? Colors.grey;
+    if (color == Colors.blue) return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure);
+    if (color == Colors.green) return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
+    if (color == Colors.purple) return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet);
+    if (color == Colors.orange) return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange);
+    if (color == Colors.red) return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
+    if (color == Colors.teal) return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan);
+    if (color == Colors.pink) return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRose);
+    if (color == Colors.yellow) return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow);
+    return BitmapDescriptor.defaultMarker; // Cor padrão
   }
 
   Set<Marker> _createMarkers() {
@@ -395,9 +397,7 @@ class _MapImageSectionState extends State<MapImageSection> {
         markerId: MarkerId(place['name']),
         position: place['latLng'],
         infoWindow: InfoWindow(title: place['name']),
-        icon: place['name'] == 'Praça da Liberdade'
-            ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)
-            : _getMarkerColor(place['category']),
+        icon: _getMarkerColor(place['category']),
       );
     }).toSet();
   }
@@ -406,25 +406,55 @@ class _MapImageSectionState extends State<MapImageSection> {
   Widget build(BuildContext context) {
     final LatLng initialPosition = const LatLng(-19.932056, -43.937378); // Praça da Liberdade
 
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 20),
-      height: 400,
-      width: double.infinity,
-      child: GoogleMap(
-        initialCameraPosition: CameraPosition(
-          target: initialPosition,
-          zoom: 13.0,
+    return Column(
+      children: [
+        Container(
+          margin: const EdgeInsets.symmetric(vertical: 20),
+          height: 400,
+          width: double.infinity,
+          child: GoogleMap(
+            initialCameraPosition: CameraPosition(
+              target: initialPosition,
+              zoom: 13.0,
+            ),
+            markers: _createMarkers(),
+            onMapCreated: (controller) {
+              setState(() {
+                mapController = controller;
+              });
+            },
+          ),
         ),
-        markers: _createMarkers(),
-        onMapCreated: (controller) {
-          setState(() {
-            mapController = controller;
-          });
-        },
-      ),
+        // Legenda
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          child: Wrap(
+            spacing: 10.0,
+            runSpacing: 10.0,
+            children: legendColors.entries.map((entry) {
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 20,
+                    height: 20,
+                    margin: const EdgeInsets.only(right: 5),
+                    decoration: BoxDecoration(
+                      color: entry.value,
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                  ),
+                  Text(entry.key, style: const TextStyle(fontSize: 14)),
+                ],
+              );
+            }).toList(),
+          ),
+        ),
+      ],
     );
   }
 }
+
 
 
 class ServicesSection extends StatelessWidget {
