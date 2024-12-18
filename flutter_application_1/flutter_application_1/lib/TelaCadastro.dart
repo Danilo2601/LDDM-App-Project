@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
@@ -58,14 +56,13 @@ class DatabaseHelper {
 
   Future<Database> _initDatabase() async {
     final dbPath = await getDatabasesPath();
-    final path = join(dbPath, 'app.db');
+    final path = join(dbPath, 'users.db');
 
     return openDatabase(
       path,
-      version: 2,  // Atualizamos a versão do banco para permitir alterações
+      version: 1,
       onCreate: (db, version) async {
-        // Criação da tabela de usuários
-        await db.execute(''' 
+        await db.execute('''
           CREATE TABLE users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT,
@@ -75,66 +72,26 @@ class DatabaseHelper {
             password TEXT,
             gender TEXT,
             gmailNotifications INTEGER,
-            whatsappNotifications INTEGER,
-            favorites TEXT  -- Coluna para armazenar favoritos como um JSON ou String
+            whatsappNotifications INTEGER
           )
         ''');
       },
-      onUpgrade: (db, oldVersion, newVersion) async {
-        if (oldVersion < 2) {
-          // Adiciona a coluna favorites se não existir
-          await db.execute('ALTER TABLE users ADD COLUMN favorites TEXT');
-        }
-      },
     );
   }
 
-  Future<void> updateFavorites(int userId, List<String> favorites) async {
+  Future<int> insertUser(User user) async {
     final db = await database;
-    String favoritesJson = jsonEncode(favorites);  // Converte lista de favoritos em JSON
-    await db.update(
-      'users',
-      {'favorites': favoritesJson},
-      where: 'id = ?',
-      whereArgs: [userId],
-    );
+    return await db.insert('users', user.toMap());
   }
-
-  // Função para buscar os dados do usuário
-  Future<Map<String, dynamic>?> getUser(int userId) async {
-    final db = await database;
-    final result = await db.query(
-      'users',
-      where: 'id = ?',
-      whereArgs: [userId],
-    );
-    if (result.isNotEmpty) {
-      return result.first;
-    }
-    return null;
-  }
-
-  Future<void> insertUser(User user) async {
-  final db = await database;
-  await db.insert(
-    'users',
-    user.toMap(),
-    conflictAlgorithm: ConflictAlgorithm.replace,  // Evita conflito em caso de ID duplicado
-  );
 }
-
-}
-
 
 class TelaCadastro extends StatefulWidget {
-  const TelaCadastro({super.key});
-
   @override
   _TelaCadastroState createState() => _TelaCadastroState();
 }
 
 class _TelaCadastroState extends State<TelaCadastro> {
-  final double _fontSize = 16;
+  double _fontSize = 16;
   bool _obscureText = true;
   String _radioSelected = '';
   bool _gmail = false;
@@ -160,6 +117,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
         _emailController.text.isEmpty ||
         _passwordController.text.isEmpty ||
         _radioSelected.isEmpty) {
+      // Usando o ScaffoldMessenger de forma correta dentro do contexto
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Por favor, preencha todos os campos!')),
       );
@@ -194,7 +152,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
     await _dbHelper.insertUser(newUser);
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Usuário cadastrado com sucesso!')),
+      SnackBar(content: Text('Usuário cadastrado com sucesso!')),
     );
 
     _nameController.clear();
@@ -213,18 +171,18 @@ class _TelaCadastroState extends State<TelaCadastro> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Create an account"),
+        title: Text("Create an account"),
         backgroundColor: Colors.amber,
       ),
       body: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         child: ListView(
           children: <Widget>[
             Padding(
               padding: const EdgeInsets.only(bottom: 16.0),
               child: TextField(
                 controller: _nameController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: "Nome",
                   border: OutlineInputBorder(),
                 ),
@@ -237,7 +195,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
               padding: const EdgeInsets.only(bottom: 16.0),
               child: TextField(
                 controller: _birthDateController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: "Data de nascimento",
                   border: OutlineInputBorder(),
                 ),
@@ -250,7 +208,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
               padding: const EdgeInsets.only(bottom: 16.0),
               child: TextField(
                 controller: _phoneController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: "Telefone",
                   border: OutlineInputBorder(),
                 ),
@@ -263,7 +221,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
               padding: const EdgeInsets.only(bottom: 16.0),
               child: TextField(
                 controller: _emailController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: "Email",
                   border: OutlineInputBorder(),
                 ),
@@ -278,7 +236,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
                 obscureText: _obscureText,
                 decoration: InputDecoration(
                   labelText: "Senha",
-                  border: const OutlineInputBorder(),
+                  border: OutlineInputBorder(),
                   suffixIcon: IconButton(
                     onPressed: _switchPasswordVisibility,
                     icon: Icon(
@@ -293,7 +251,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
             Row(
               children: <Widget>[
                 Text("Gênero:", style: TextStyle(fontSize: _fontSize)),
-                const SizedBox(width: 20),
+                SizedBox(width: 20),
                 Expanded(
                   child: RadioListTile(
                     title: Text("Masculino", style: TextStyle(fontSize: _fontSize)),
@@ -339,11 +297,11 @@ class _TelaCadastroState extends State<TelaCadastro> {
               },
             ),
             ElevatedButton(
-              onPressed: () => _saveUser(context),
+              onPressed: () => _saveUser(context),  // Passando o contexto aqui
+              child: Text("Cadastrar"),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.amber,
-              ),  // Passando o contexto aqui
-              child: Text("Cadastrar"),
+              ),
             ),
           ],
         ),

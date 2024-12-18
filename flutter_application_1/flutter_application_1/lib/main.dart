@@ -1,11 +1,14 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/LoginPage.dart';
-import 'package:flutter_application_1/review_page.dart';
-import 'package:flutter_application_1/user_profile_screen.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'dart:convert';
+import 'package:flutter/services.dart';
+import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
+
 import 'TelaCadastro.dart' as TelaCadastro;
-import 'user_profile_screen.dart';
 
 
 void main() {
@@ -14,7 +17,8 @@ void main() {
 
 class MyTripWebsite extends StatelessWidget {
   const MyTripWebsite({super.key});
-
+  
+  
   @override
   Widget build(BuildContext context) {
     final int userId = ModalRoute.of(context)!.settings.arguments as int;
@@ -40,7 +44,6 @@ class MyTripWebsite extends StatelessWidget {
 }
 
 
-
 BottomNavigationBar _buildBottomNavigationBar(BuildContext context, int currentIndex) {
   return BottomNavigationBar(
     currentIndex: currentIndex,
@@ -59,11 +62,10 @@ BottomNavigationBar _buildBottomNavigationBar(BuildContext context, int currentI
           Navigator.of(context).pushReplacementNamed('/about');
           break;
         case 4:
-          Navigator.of(context).pushReplacementNamed('/search');
+          Navigator.of(context).pushReplacementNamed('/search'); // Redireciona para ReviewPage
           break;
         case 5:
-          // Aqui, passamos o userId ao navegar para o perfil
-          Navigator.of(context).pushReplacementNamed('/profile', arguments: 123);  // Passe o userId
+          Navigator.of(context).pushReplacementNamed('/profile'); // Redireciona para ProfilePage
           break;
       }
     },
@@ -72,8 +74,8 @@ BottomNavigationBar _buildBottomNavigationBar(BuildContext context, int currentI
       BottomNavigationBarItem(icon: Icon(Icons.explore), label: 'Explorar'),
       BottomNavigationBarItem(icon: Icon(Icons.star), label: 'Populares'),
       BottomNavigationBarItem(icon: Icon(Icons.info), label: 'Sobre'),
-      BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Pesquisa'),
-      BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
+      BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Pesquisa'), // Ícone de Pesquisa
+      BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),   // Ícone de Perfil
     ],
     selectedItemColor: Colors.yellow[700],
     unselectedItemColor: Colors.blue[900],
@@ -92,32 +94,31 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final int _currentIndex = 0; 
+  int _currentIndex = 0;
 
   @override
   Widget build(BuildContext context) {
-    // Obtendo o email passado como argumento
-    final email = ModalRoute.of(context)!.settings.arguments as String?;
+  final email = ModalRoute.of(context)!.settings.arguments as String?;
 
     return Scaffold(
-      appBar: const CustomAppBar(),
-      body: SingleChildScrollView(
+      appBar: CustomAppBar(showSearch: true), // Busca visível
+      body:  SingleChildScrollView(
         child: Column(
           children: [
-            const HeaderSection(),
+            HeaderSection(),
             // Exibindo a saudação com o nome do usuário ou email
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: email != null 
                   ? Text(
                         "Bem-vindo, $email!",
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: Colors.orange,
                         ),
                       )
-                  : const Text(
+                  : Text(
                       "Bem-vindo, Usuário!",
                       style: TextStyle(
                         fontSize: 20,
@@ -126,11 +127,11 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
             ),
-            const MapImageSection(),
-            const ServicesSection(),
-            const PopularDestinationsSection(),
-            const ContactSection(),
-            const Footer(),
+            MapImageSection(),
+            ServicesSection(),
+            PopularDestinationsSection(),
+            ContactSection(),
+            Footer(),
           ],
         ),
       ),
@@ -140,15 +141,58 @@ class _HomePageState extends State<HomePage> {
 }
 
 
+class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
+  final bool showSearch; // Adiciona um parâmetro para controle
 
+  const CustomAppBar({super.key, this.showSearch = false});
+  
+  @override
+  State<CustomAppBar> createState() => _CustomAppBarState();
 
-class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const CustomAppBar({super.key});
+  @override
+  Size get preferredSize => const Size.fromHeight(120);
+}
+
+class _CustomAppBarState extends State<CustomAppBar> {
+  List<dynamic> _places = [];
+  List<dynamic> _filteredPlaces = [];
+  String _query = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPlaces();
+  }
+
+  // Carrega os dados do JSON
+  Future<void> _loadPlaces() async {
+    final String response = await rootBundle.loadString('assets/places.json');
+    final data = json.decode(response);
+    setState(() {
+      _places = data;
+      _filteredPlaces = _places;
+    });
+  }
+
+  // Filtra a lista conforme a entrada
+  void _filterPlaces(String query) {
+    setState(() {
+      _query = query;
+      if (query.isEmpty) {
+        _filteredPlaces = _places;
+      } else {
+        _filteredPlaces = _places
+            .where((place) =>
+                place['name'].toLowerCase().contains(query.toLowerCase()))
+            .toList();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      toolbarHeight: 100,
+      toolbarHeight: 120,
       backgroundColor: Colors.white,
       elevation: 0,
       title: Padding(
@@ -159,16 +203,20 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Logo do site
-                const Text(
-                  'My Trip App',
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+                // Botão "My Trip App"
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pushReplacementNamed('/');
+                  },
+                  child: const Text(
+                    'My Trip App',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-                // Botão de login
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue[900],
@@ -179,62 +227,58 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   onPressed: () {
                     Navigator.of(context).pushNamed("/login");
                   },
-                  child: const Text('Fazer login', style: TextStyle(color: Colors.orange),),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            // Campo de busca centralizado
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: MediaQuery.of(context).size.width * 0.7, 
-                  height: 40,
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.search, color: Colors.grey),
-                      const SizedBox(width: 10),
-                      const Expanded(
-                        child: TextField(
-                          decoration: InputDecoration(
-                            border: InputBorder.none,
-                            hintText: 'Lugares para ir, o que fazer, hotéis...',
-                          ),
-                        ),
-                      ),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                        ),
-                        onPressed: () {},
-                        child: const FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text('Buscar'),
-                        ),
-                      ),
-                    ],
+                  child: const Text(
+                    'Fazer login',
+                    style: TextStyle(color: Colors.orange),
                   ),
                 ),
               ],
             ),
+            const SizedBox(height: 10),
+            // Campo de busca
+            TextField(
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                hintText: 'Lugares para ir, o que fazer, hotéis...',
+                filled: true,
+                fillColor: Colors.grey[200],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+              onChanged: _filterPlaces,
+            ),
+            const SizedBox(height: 10),
+            // Exibição dinâmica dos resultados
+            _query.isNotEmpty
+                ? Container(
+                    height: 150,
+                    color: Colors.white,
+                    child: ListView.builder(
+                      itemCount: _filteredPlaces.length,
+                      itemBuilder: (context, index) {
+                        final place = _filteredPlaces[index];
+                        return ListTile(
+                          leading: const Icon(Icons.place, color: Colors.orange),
+                          title: Text(place['name']),
+                          onTap: () {
+                            // Ação ao selecionar um item
+                            Navigator.of(context).pushNamed('/explore');
+                          },
+                        );
+                      },
+                    ),
+                  )
+                : const SizedBox(),
           ],
         ),
       ),
     );
   }
-
-  @override
-  Size get preferredSize => const Size.fromHeight(120);
 }
+
+
 
 class HeaderSection extends StatelessWidget {
   const HeaderSection({super.key});
@@ -291,22 +335,101 @@ class HeaderSection extends StatelessWidget {
   }
 }
 
-class MapImageSection extends StatelessWidget {
+class MapImageSection extends StatefulWidget {
   const MapImageSection({super.key});
 
   @override
+  State<MapImageSection> createState() => _MapImageSectionState();
+}
+
+class _MapImageSectionState extends State<MapImageSection> {
+  late GoogleMapController mapController;
+
+  // Coordenadas dos locais com base na lista fornecida
+  final List<Map<String, dynamic>> places = [
+    {'name': 'Igreja da Pampulha', 'category': 'Cultural', 'latLng': LatLng(-19.8586, -43.9842)},
+    {'name': 'Parque Municipal', 'category': 'Parque', 'latLng': LatLng(-19.9212, -43.9377)},
+    {'name': 'Mercado Central', 'category': 'Compras', 'latLng': LatLng(-19.9222, -43.9375)},
+    {'name': 'Praça da Liberdade', 'category': 'Histórico', 'latLng': LatLng(-19.932056, -43.937378)},
+    {'name': 'Mineirão', 'category': 'Esportivo', 'latLng': LatLng(-19.8651, -43.9716)},
+    {'name': 'Mirante Mangabeiras', 'category': 'Parque', 'latLng': LatLng(-19.9499, -43.9133)},
+    {'name': 'Inhotim', 'category': 'Cultural', 'latLng': LatLng(-20.1251, -44.0559)},
+    {'name': 'Feira Hippie', 'category': 'Compras', 'latLng': LatLng(-19.9244, -43.9337)},
+    {'name': 'Palácio das Artes', 'category': 'Cultural', 'latLng': LatLng(-19.9225, -43.9385)},
+    {'name': 'Lagoa da Pampulha', 'category': 'Natureza', 'latLng': LatLng(-19.8534, -43.9761)},
+    {'name': 'Parque das Mangabeiras', 'category': 'Parque', 'latLng': LatLng(-19.9496, -43.9152)},
+    {'name': 'Savassi', 'category': 'Vida Noturna', 'latLng': LatLng(-19.9338, -43.9296)},
+    {'name': 'Museu de Arte da Pampulha', 'category': 'Cultural', 'latLng': LatLng(-19.8582, -43.9837)},
+    {'name': 'Centro Cultural Banco do Brasil', 'category': 'Cultural', 'latLng': LatLng(-19.9323, -43.9382)},
+    {'name': 'Museu Histórico Abílio Barreto', 'category': 'Histórico', 'latLng': LatLng(-19.9374, -43.9409)},
+    {'name': 'Museu de Ciências Naturais', 'category': 'Cultural', 'latLng': LatLng(-19.9350, -43.9815)},
+    {'name': 'Restaurante Xapuri', 'category': 'Gastronomia', 'latLng': LatLng(-19.8595, -43.9783)},
+    {'name': 'Mercado Novo', 'category': 'Gastronomia', 'latLng': LatLng(-19.9216, -43.9406)},
+    {'name': 'Casa Fiat de Cultura', 'category': 'Cultural', 'latLng': LatLng(-19.9329, -43.9387)},
+    {'name': 'Café com Letras', 'category': 'Gastronomia', 'latLng': LatLng(-19.9328, -43.9295)},
+  ];
+
+  // Função para determinar a cor dos marcadores com base na categoria
+  BitmapDescriptor _getMarkerColor(String category) {
+    switch (category) {
+      case 'Cultural':
+        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure);
+      case 'Parque':
+        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
+      case 'Compras':
+        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
+      case 'Histórico':
+        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange);
+      case 'Esportivo':
+        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
+      case 'Natureza':
+        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan);
+      case 'Vida Noturna':
+        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet);
+      case 'Gastronomia':
+        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow);
+      default:
+        return BitmapDescriptor.defaultMarker; // Cor padrão
+    }
+  }
+
+  Set<Marker> _createMarkers() {
+    return places.map((place) {
+      return Marker(
+        markerId: MarkerId(place['name']),
+        position: place['latLng'],
+        infoWindow: InfoWindow(title: place['name']),
+        icon: place['name'] == 'Praça da Liberdade'
+            ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)
+            : _getMarkerColor(place['category']),
+      );
+    }).toSet();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final LatLng initialPosition = const LatLng(-19.932056, -43.937378); // Praça da Liberdade
+
     return Container(
-      padding: const EdgeInsets.all(20),
-      child: Image.asset(
-        'assets/maps.jpeg',
-        height: 400,
-        width: double.infinity,
-        fit: BoxFit.cover,
+      margin: const EdgeInsets.symmetric(vertical: 20),
+      height: 400,
+      width: double.infinity,
+      child: GoogleMap(
+        initialCameraPosition: CameraPosition(
+          target: initialPosition,
+          zoom: 13.0,
+        ),
+        markers: _createMarkers(),
+        onMapCreated: (controller) {
+          setState(() {
+            mapController = controller;
+          });
+        },
       ),
     );
   }
 }
+
 
 class ServicesSection extends StatelessWidget {
   const ServicesSection({super.key});
@@ -429,7 +552,7 @@ class DestinationCard extends StatelessWidget {
     return Card(
       child: Column(
         children: [
-          Image.network(imageUrl, width: 200, height: 150, fit: BoxFit.cover),
+          Image.asset(imageUrl, width: 200, height: 150, fit: BoxFit.cover),
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Text(title, style: const TextStyle(fontSize: 18)),
@@ -524,7 +647,7 @@ class ExplorePage extends StatefulWidget {
 }
 
 class _ExplorePageState extends State<ExplorePage> {
-  final int _currentIndex = 1;  
+  final int _currentIndex = 1;
 
   List<Place> places = [
     Place(name: 'Igreja da Pampulha', category: 'Cultural', rating: 4.8),
@@ -596,7 +719,7 @@ class _ExplorePageState extends State<ExplorePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(),
+      appBar: const CustomAppBar(showSearch: true), // Exibe a busca no AppBar
       body: Column(
         children: [
           // Filtros de categoria com Checkboxes
@@ -615,7 +738,6 @@ class _ExplorePageState extends State<ExplorePage> {
               }).toList(),
             ),
           ),
-
           // Lista filtrada de lugares
           Expanded(
             child: ListView.builder(
@@ -632,8 +754,7 @@ class _ExplorePageState extends State<ExplorePage> {
           ),
         ],
       ),
-
-      bottomNavigationBar: _buildBottomNavigationBar(context, _currentIndex)
+      bottomNavigationBar: _buildBottomNavigationBar(context, _currentIndex),
     );
   }
 }
@@ -647,6 +768,7 @@ class Place {
 }
 
 
+
 class PopularDestinationsPage extends StatelessWidget {
   const PopularDestinationsPage({super.key});
 
@@ -654,45 +776,42 @@ class PopularDestinationsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const CustomAppBar(),
-      body: const SingleChildScrollView(
-        child: Column(
-          children: [
-            Padding(
-              padding: EdgeInsets.all(20),
-              child: Text(
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: const [
+              Text(
                 'Restaurantes Populares',
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
-            ),
-            Column(
-              children: [
-                DestinationCardPage(
-                  imageUrl: 'assets/restaurante1.jpg',
-                  title: 'Restaurante 1621',
-                  location: 'Centro, Belo Horizonte',
-                  reviews: 2776,
-                  description:
-                      'Uma experiência gastronômica única, com um ambiente acolhedor e culinária excepcional.',
-                ),
-                DestinationCardPage(
-                  imageUrl: 'assets/restaurante2.jpeg',
-                  title: 'Northcote Restaurant',
-                  location: 'Pambulha, Belo Horizonte',
-                  reviews: 2020,
-                  description:
-                      'Experimente pratos deliciosos preparados por renomados chefs em um ambiente elegante.',
-                ),
-                DestinationCardPage(
-                  imageUrl: 'assets/restaurante3.jpeg',
-                  title: 'Casa Vigil',
-                  location: 'Savassi, Belo Horizonte',
-                  reviews: 1490,
-                  description:
-                      'Desfrute de uma experiência única em uma vinícola localizada no coração de BH.',
-                ),
-              ],
-            ),
-          ],
+              SizedBox(height: 20),
+              DestinationCardPage(
+                imageUrl: 'assets/restaurante1.jpg',
+                title: 'Restaurante 1621',
+                location: 'Centro, Belo Horizonte',
+                reviews: 2776,
+                description:
+                    'Uma experiência gastronômica única, com um ambiente acolhedor e culinária excepcional.',
+              ),
+              DestinationCardPage(
+                imageUrl: 'assets/restaurante2.jpeg',
+                title: 'Northcote Restaurant',
+                location: 'Pampulha, Belo Horizonte',
+                reviews: 2020,
+                description:
+                    'Experimente pratos deliciosos preparados por renomados chefs em um ambiente elegante.',
+              ),
+              DestinationCardPage(
+                imageUrl: 'assets/restaurante3.jpeg',
+                title: 'Casa Vigil',
+                location: 'Savassi, Belo Horizonte',
+                reviews: 1490,
+                description:
+                    'Desfrute de uma experiência única em uma vinícola localizada no coração de BH.',
+              ),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: _buildBottomNavigationBar(context, 2),
@@ -700,13 +819,13 @@ class PopularDestinationsPage extends StatelessWidget {
   }
 }
 
-class DestinationCardPage extends StatefulWidget {
+
+class DestinationCardPage extends StatelessWidget {
   final String imageUrl;
   final String title;
   final String location;
   final int reviews;
   final String description;
-  final int? userId; // ID do usuário logado (pode ser null se não estiver logado)
 
   const DestinationCardPage({
     super.key,
@@ -715,101 +834,31 @@ class DestinationCardPage extends StatefulWidget {
     required this.location,
     required this.reviews,
     required this.description,
-    this.userId, // ID do usuário (pode ser null)
   });
-
-  @override
-  _DestinationCardPageState createState() => _DestinationCardPageState();
-}
-
-class _DestinationCardPageState extends State<DestinationCardPage> {
-  bool _isFavorite = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadFavoriteStatus(); // Carregar o status do favorito quando a tela for inicializada
-  }
-
-  // Função para carregar o status de favorito do usuário
-  Future<void> _loadFavoriteStatus() async {
-    if (widget.userId != null) {
-      final dbHelper = TelaCadastro.DatabaseHelper();
-      final userData = await dbHelper.getUser(widget.userId!);
-
-      if (userData != null) {
-        final List<String> favorites =
-            List<String>.from(jsonDecode(userData['favorites'] ?? '[]'));
-
-        setState(() {
-          // Verificar se o título (nome do destino) está nos favoritos
-          _isFavorite = favorites.contains(widget.title);
-        });
-      }
-    }
-  }
-
-  // Função para adicionar ou remover dos favoritos
-  Future<void> _toggleFavorite() async {
-    if (widget.userId == null) {
-      // Se o usuário não estiver logado, exibe um alerta
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("É preciso estar logado para adicionar um ponto turístico aos seus favoritos")),
-      );
-      return;
-    }
-
-    final dbHelper = TelaCadastro.DatabaseHelper();
-    final userData = await dbHelper.getUser(widget.userId!);
-
-    if (userData != null) {
-      final List<String> favorites =
-          List<String>.from(jsonDecode(userData['favorites'] ?? '[]'));
-
-      // Adiciona ou remove o destino dos favoritos
-      if (_isFavorite) {
-        favorites.remove(widget.title); // Remove do favorito
-      } else {
-        favorites.add(widget.title); // Adiciona ao favorito
-      }
-
-      // Atualiza os favoritos no banco de dados
-      await dbHelper.updateFavorites(widget.userId!, favorites);
-
-      setState(() {
-        _isFavorite = !_isFavorite; // Atualiza o estado do favorito
-      });
-
-      // Exibe uma mensagem para o usuário
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${widget.title} ${_isFavorite ? 'adicionado' : 'removido'} dos favoritos!')),
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+      margin: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Imagem
+          // Imagem ajustável
           Container(
-            width: 150,
-            height: 150,
+            width: MediaQuery.of(context).size.width * 0.3, // 30% da largura da tela
+            height: 120,
             decoration: BoxDecoration(
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(10),
                 bottomLeft: Radius.circular(10),
               ),
               image: DecorationImage(
-                image: AssetImage(widget.imageUrl),
+                image: AssetImage(imageUrl),
                 fit: BoxFit.cover,
               ),
             ),
           ),
-          // Conteúdo textual
+          // Conteúdo textual flexível
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(12.0),
@@ -817,48 +866,57 @@ class _DestinationCardPageState extends State<DestinationCardPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.title,
+                    title,
                     style: const TextStyle(
-                        fontSize: 22, fontWeight: FontWeight.bold),
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1, // Limita o título a uma linha
                   ),
                   const SizedBox(height: 5),
                   Row(
                     children: [
-                      const Icon(Icons.location_on, color: Colors.grey),
+                      const Icon(Icons.location_on, color: Colors.grey, size: 16),
                       const SizedBox(width: 5),
-                      Text(widget.location,
-                          style: const TextStyle(color: Colors.grey)),
+                      Expanded(
+                        child: Text(
+                          location,
+                          style: const TextStyle(color: Colors.grey),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 5),
                   Row(
                     children: [
-                      const Icon(Icons.star, color: Colors.orange, size: 18),
+                      const Icon(Icons.star, color: Colors.orange, size: 16),
                       const SizedBox(width: 5),
-                      Text('${widget.reviews} avaliações',
-                          style: const TextStyle(color: Colors.grey)),
+                      Text(
+                        '$reviews avaliações',
+                        style: const TextStyle(color: Colors.grey),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    widget.description,
-                    style: const TextStyle(fontSize: 16),
+                    description,
+                    style: const TextStyle(fontSize: 14),
                     overflow: TextOverflow.ellipsis,
-                    maxLines: 3,
+                    maxLines: 2, // Limita a descrição a duas linhas
                   ),
                 ],
               ),
             ),
           ),
-          // Botão de salvar (favoritar)
+          // Ícone de favorito
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: IconButton(
-              icon: Icon(
-                _isFavorite ? Icons.favorite : Icons.favorite_border,
-                color: Colors.red,
-              ),
-              onPressed: _toggleFavorite, // Adiciona ou remove dos favoritos
+              icon: const Icon(Icons.favorite_border),
+              onPressed: () {},
             ),
           ),
         ],
@@ -866,6 +924,7 @@ class _DestinationCardPageState extends State<DestinationCardPage> {
     );
   }
 }
+
 
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
@@ -974,4 +1033,385 @@ class TeamMember extends StatelessWidget {
   }
 }
 
+
+class Review {
+  final int? id;
+  final String placeName;
+  final String reviewText;
+  final int rating;
+  final String? imagePath;
+
+  Review({
+    this.id,
+    required this.placeName,
+    required this.reviewText,
+    required this.rating,
+    this.imagePath,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'placeName': placeName,
+      'reviewText': reviewText,
+      'rating': rating,
+      'imagePath': imagePath,
+    };
+  }
+
+  factory Review.fromMap(Map<String, dynamic> map) {
+    return Review(
+      id: map['id'],
+      placeName: map['placeName'],
+      reviewText: map['reviewText'],
+      rating: map['rating'],
+      imagePath: map['imagePath'],
+    );
+  }
+}
+
+// Helper para gerenciar o banco de dados
+class DatabaseHelper {
+  static final DatabaseHelper _instance = DatabaseHelper._internal();
+  factory DatabaseHelper() => _instance;
+
+  DatabaseHelper._internal();
+
+  Database? _database;
+
+  Future<Database> get database async {
+    if (_database != null) return _database!;
+    _database = await _initDatabase();
+    return _database!;
+  }
+
+  Future<Database> _initDatabase() async {
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, 'reviews.db');
+
+    return openDatabase(
+      path,
+      version: 1,
+      onCreate: (db, version) async {
+        await db.execute('''
+          CREATE TABLE reviews (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            placeName TEXT,
+            reviewText TEXT,
+            rating INTEGER,
+            imagePath TEXT
+          )
+        ''');
+      },
+    );
+  }
+
+  Future<int> insertReview(Review review) async {
+    final db = await database;
+    return await db.insert('reviews', review.toMap());
+  }
+
+  Future<List<Review>> getAllReviews() async {
+    final db = await database;
+    final result = await db.query('reviews');
+    return result.map((map) => Review.fromMap(map)).toList();
+  }
+}
+
+// Tela principal
+class ReviewScreen extends StatefulWidget {
+  @override
+  _ReviewScreenState createState() => _ReviewScreenState();
+}
+
+class _ReviewScreenState extends State<ReviewScreen> {
+  final TextEditingController _placeNameController = TextEditingController();
+  final TextEditingController _reviewTextController = TextEditingController();
+  int rating = 0;
+  File? _image;
+  final DatabaseHelper _dbHelper = DatabaseHelper();
+
+  // Método para selecionar uma imagem
+  Future<void> _pickImage() async {
+    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _image = File(pickedFile.path);
+      });
+    }
+  }
+
+  // Método para salvar a review
+  Future<void> _saveReview() async {
+    final placeName = _placeNameController.text;
+    final reviewText = _reviewTextController.text;
+
+    if (placeName.isEmpty || reviewText.isEmpty || rating == 0) {
+      ScaffoldMessenger.of(context as BuildContext).showSnackBar(
+        SnackBar(content: Text('Por favor, preencha todos os campos!')),
+      );
+      return;
+    }
+
+    final newReview = Review(
+      placeName: placeName,
+      reviewText: reviewText,
+      rating: rating,
+      imagePath: _image?.path,
+    );
+
+    await _dbHelper.insertReview(newReview);
+
+    ScaffoldMessenger.of(context as BuildContext).showSnackBar(
+      SnackBar(content: Text('Review salva com sucesso!')),
+    );
+
+    _placeNameController.clear();
+    _reviewTextController.clear();
+    setState(() {
+      rating = 0;
+      _image = null;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Review Screen'),
+        backgroundColor: Colors.orange,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              // Campo de texto para o nome do lugar
+              TextField(
+                controller: _placeNameController,
+                decoration: InputDecoration(
+                  labelText: 'Nome do Lugar',
+                  labelStyle: TextStyle(color: Colors.orange),
+                  filled: true,
+                  fillColor: Colors.white,
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.orange),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.orange),
+                  ),
+                ),
+                style: TextStyle(color: Colors.black),
+              ),
+              SizedBox(height: 20),
+
+              // Campo de texto para a review
+              TextField(
+                controller: _reviewTextController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: 'Escreva sobre o que achou',
+                  labelStyle: TextStyle(color: Colors.orange),
+                  filled: true,
+                  fillColor: Colors.white,
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.orange),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.orange),
+                  ),
+                ),
+                style: TextStyle(color: Colors.black),
+              ),
+              SizedBox(height: 20),
+
+              // Avaliação por estrelas
+              Text(
+                'Avaliação:',
+                style: TextStyle(color: Colors.orange, fontSize: 16),
+              ),
+              Row(
+                children: List.generate(5, (index) {
+                  return IconButton(
+                    icon: Icon(
+                      index < rating ? Icons.star : Icons.star_border,
+                      color: Colors.orange,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        rating = index + 1;
+                      });
+                    },
+                  );
+                }),
+              ),
+              SizedBox(height: 20),
+
+              // Botão para adicionar imagem
+              Row(
+                children: <Widget>[
+                  ElevatedButton(
+                    onPressed: _pickImage,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                    ),
+                    child: Text('Adicione uma imagem'),
+                  ),
+                  SizedBox(width: 10),
+                  _image != null
+                      ? Image.file(
+                          _image!,
+                          width: 100,
+                          height: 100,
+                        )
+                      : Container(),
+                ],
+              ),
+              SizedBox(height: 20),
+
+              // Botão para salvar a review
+              Center(
+                child: ElevatedButton(
+                  onPressed: _saveReview,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                  ),
+                  child: Text('Salvar Review'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: _buildBottomNavigationBar(context, 4),
+    );
+  }
+}
+
+
+class UserProfileScreen extends StatefulWidget {
+  final int userId;  // O ID do usuário logado será passado para essa tela
+  const UserProfileScreen({Key? key, required this.userId}) : super(key: key);
+
+  @override
+  _UserProfileScreenState createState() => _UserProfileScreenState();
+}
+
+class _UserProfileScreenState extends State<UserProfileScreen> {
+  late Future<Map<String, dynamic>?> _userData;
+
+  @override
+  void initState() {
+    super.initState();
+    // Verificar se o usuário está logado. Caso contrário, redireciona para a tela de login
+    _userData = _getUserData();
+  }
+
+  // Método para buscar os dados do usuário logado
+  Future<Map<String, dynamic>?> _getUserData() async {
+    final userData = await TelaCadastro.DatabaseHelper().getUser(widget.userId);
+    return userData;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Perfil do Usuário'),
+        backgroundColor: Colors.orange,
+      ),
+      body: FutureBuilder<Map<String, dynamic>?>(  // FutureBuilder para buscar dados do usuário
+        future: _userData,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError || !snapshot.hasData) {
+            // Se o usuário não estiver logado, redireciona para a tela de login
+            return Center(
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoginPage()),
+                  );
+                },
+                child: const Text('Faça o login para acessar o perfil'),
+              ),
+            );
+          }
+
+          final user = snapshot.data!;
+          final String username = user['username'] ?? 'Nome não encontrado';
+          // Verifique se favoritos é uma lista de strings antes de decodificar
+          final favoritesJson = user['favorites'] ?? '[]';
+          final List<String> favorites = List<String>.from(jsonDecode(favoritesJson));
+
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                // Nome de Usuário
+                Text('Nome de Usuário: $username', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 20),
+
+                // Exibir Favoritos
+                const Text('Favoritos:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 10),
+                // Usando ListView sem Expanded para evitar problemas de layout
+                if (favorites.isNotEmpty)
+                  ListView.builder(
+                    shrinkWrap: true,  // Importante para não causar problemas de layout
+                    itemCount: favorites.length,
+                    itemBuilder: (context, index) {
+                      final placeName = favorites[index];
+                      return ListTile(
+                        leading: Icon(Icons.place, color: Colors.orange),
+                        title: Text(placeName),
+                        trailing: Icon(Icons.star, color: Colors.orange),
+                      );
+                    },
+                  )
+                else
+                  const Center(child: Text('Você ainda não tem favoritos')),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+  // Função para construir o item de review
+  Widget _buildReviewTile(String place, String review, int rating) {
+    return Card(
+      color: Colors.white,
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      child: ListTile(
+        title: Text(
+          place,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+        subtitle: Text(
+          review,
+          style: const TextStyle(color: Colors.black54),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(5, (index) {
+            return Icon(
+              index < rating ? Icons.star : Icons.star_border,
+              color: Colors.orange,
+            );
+          }),
+        ),
+      ),
+    );
+  }
+}
 
