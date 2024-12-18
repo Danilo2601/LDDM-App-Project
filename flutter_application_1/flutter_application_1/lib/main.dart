@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
+import 'TelaCadastro.dart' as TelaCadastro;
 
 void main() {
   runApp(const MyTripWebsite());
@@ -15,10 +16,11 @@ void main() {
 
 class MyTripWebsite extends StatelessWidget {
   const MyTripWebsite({super.key});
-  
-  
+
   @override
   Widget build(BuildContext context) {
+    final String email = ModalRoute.of(context)!.settings.arguments as String;
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'My Trip App',
@@ -32,15 +34,15 @@ class MyTripWebsite extends StatelessWidget {
         '/popular': (context) => const PopularDestinationsPage(),
         '/about': (context) => const AboutPage(),
         '/login': (context) => LoginPage(),
-        '/search': (context) => ReviewScreen(),  // Supondo que seja o arquivo review_page.dart
-        '/profile': (context) =>  UserProfileScreen(), // Referenciando o arquivo de perfil
+        '/search': (context) => ReviewScreen(),
+        '/profile': (context) => UserProfileScreen(email: email),
       },
     );
   }
 }
 
-
-BottomNavigationBar _buildBottomNavigationBar(BuildContext context, int currentIndex) {
+BottomNavigationBar _buildBottomNavigationBar(
+    BuildContext context, int currentIndex) {
   return BottomNavigationBar(
     currentIndex: currentIndex,
     onTap: (index) {
@@ -58,10 +60,12 @@ BottomNavigationBar _buildBottomNavigationBar(BuildContext context, int currentI
           Navigator.of(context).pushReplacementNamed('/about');
           break;
         case 4:
-          Navigator.of(context).pushReplacementNamed('/search'); // Redireciona para ReviewPage
+          Navigator.of(context)
+              .pushReplacementNamed('/search'); // Redireciona para ReviewPage
           break;
         case 5:
-          Navigator.of(context).pushReplacementNamed('/profile'); // Redireciona para ProfilePage
+          Navigator.of(context)
+              .pushReplacementNamed('/profile'); // Redireciona para ProfilePage
           break;
       }
     },
@@ -70,8 +74,10 @@ BottomNavigationBar _buildBottomNavigationBar(BuildContext context, int currentI
       BottomNavigationBarItem(icon: Icon(Icons.explore), label: 'Explorar'),
       BottomNavigationBarItem(icon: Icon(Icons.star), label: 'Populares'),
       BottomNavigationBarItem(icon: Icon(Icons.info), label: 'Sobre'),
-      BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Pesquisa'), // Ícone de Pesquisa
-      BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),   // Ícone de Perfil
+      BottomNavigationBarItem(
+          icon: Icon(Icons.search), label: 'Pesquisa'), // Ícone de Pesquisa
+      BottomNavigationBarItem(
+          icon: Icon(Icons.person), label: 'Perfil'), // Ícone de Perfil
     ],
     selectedItemColor: Colors.yellow[700],
     unselectedItemColor: Colors.blue[900],
@@ -79,8 +85,6 @@ BottomNavigationBar _buildBottomNavigationBar(BuildContext context, int currentI
     showUnselectedLabels: true,
   );
 }
-
-
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -94,35 +98,12 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-  final email = ModalRoute.of(context)!.settings.arguments as String?;
-
-    return Scaffold(
-      appBar: CustomAppBar(showSearch: true), // Busca visível
-      body:  SingleChildScrollView(
+    return  Scaffold(
+      appBar: CustomAppBar(),
+      body: const SingleChildScrollView(
         child: Column(
           children: [
             HeaderSection(),
-            // Exibindo a saudação com o nome do usuário ou email
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: email != null 
-                  ? Text(
-                        "Bem-vindo, $email!",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.orange,
-                        ),
-                      )
-                  : Text(
-                      "Bem-vindo, Usuário!",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.orange,
-                      ),
-                    ),
-            ),
             MapImageSection(),
             ServicesSection(),
             PopularDestinationsSection(),
@@ -137,53 +118,8 @@ class _HomePageState extends State<HomePage> {
 }
 
 
-class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
-  final bool showSearch; // Adiciona um parâmetro para controle
-
-  const CustomAppBar({super.key, this.showSearch = false});
-  
-  @override
-  State<CustomAppBar> createState() => _CustomAppBarState();
-
-  @override
-  Size get preferredSize => const Size.fromHeight(120);
-}
-
-class _CustomAppBarState extends State<CustomAppBar> {
-  List<dynamic> _places = [];
-  List<dynamic> _filteredPlaces = [];
-  String _query = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadPlaces();
-  }
-
-  // Carrega os dados do JSON
-  Future<void> _loadPlaces() async {
-    final String response = await rootBundle.loadString('assets/places.json');
-    final data = json.decode(response);
-    setState(() {
-      _places = data;
-      _filteredPlaces = _places;
-    });
-  }
-
-  // Filtra a lista conforme a entrada
-  void _filterPlaces(String query) {
-    setState(() {
-      _query = query;
-      if (query.isEmpty) {
-        _filteredPlaces = _places;
-      } else {
-        _filteredPlaces = _places
-            .where((place) =>
-                place['name'].toLowerCase().contains(query.toLowerCase()))
-            .toList();
-      }
-    });
-  }
+class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const CustomAppBar({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -213,6 +149,20 @@ class _CustomAppBarState extends State<CustomAppBar> {
                     ),
                   ),
                 ),
+                // Botão "My Trip App"
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pushReplacementNamed('/');
+                  },
+                  child: const Text(
+                    'My Trip App',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue[900],
@@ -223,6 +173,10 @@ class _CustomAppBarState extends State<CustomAppBar> {
                   onPressed: () {
                     Navigator.of(context).pushNamed("/login");
                   },
+                  child: const Text(
+                    'Fazer login',
+                    style: TextStyle(color: Colors.orange),
+                  ),
                   child: const Text(
                     'Fazer login',
                     style: TextStyle(color: Colors.orange),
@@ -310,10 +264,9 @@ class HeaderSection extends StatelessWidget {
               TextSpan(
                 text: 'Belo Horizonte\n',
                 style: TextStyle(
-                  fontSize: 50,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue[900]
-                ),
+                    fontSize: 50,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue[900]),
               ),
               const TextSpan(
                 text: 'com a My Trip',
@@ -331,6 +284,7 @@ class HeaderSection extends StatelessWidget {
   }
 }
 
+class MapImageSection extends StatefulWidget {
 class MapImageSection extends StatefulWidget {
   const MapImageSection({super.key});
 
@@ -554,10 +508,13 @@ class PopularDestinationsSection extends StatelessWidget {
             spacing: 20,
             runSpacing: 20,
             children: [
-              DestinationCard(imageUrl: 'assets/place1.jpeg', title: 'Igreja da Pampulha'),
+              DestinationCard(
+                  imageUrl: 'assets/place1.jpeg', title: 'Igreja da Pampulha'),
               DestinationCard(imageUrl: 'assets/place2.jpeg', title: 'Savassi'),
-              DestinationCard(imageUrl: 'assets/place3.jpeg', title: 'Parque Guanabara'),
-              DestinationCard(imageUrl: 'assets/mineirao.jpg', title: 'Mineirão'),
+              DestinationCard(
+                  imageUrl: 'assets/place3.jpeg', title: 'Parque Guanabara'),
+              DestinationCard(
+                  imageUrl: 'assets/mineirao.jpg', title: 'Mineirão'),
             ],
           ),
         ],
@@ -578,6 +535,7 @@ class DestinationCard extends StatelessWidget {
     return Card(
       child: Column(
         children: [
+          Image.asset(imageUrl, width: 200, height: 150, fit: BoxFit.cover),
           Image.asset(imageUrl, width: 200, height: 150, fit: BoxFit.cover),
           Padding(
             padding: const EdgeInsets.all(8.0),
@@ -689,9 +647,16 @@ class _ExplorePageState extends State<ExplorePage> {
     Place(name: 'Parque das Mangabeiras', category: 'Parque', rating: 4.7),
     Place(name: 'Savassi', category: 'Vida Noturna', rating: 4.6),
     Place(name: 'Museu de Arte da Pampulha', category: 'Cultural', rating: 4.6),
-    Place(name: 'Centro Cultural Banco do Brasil', category: 'Cultural', rating: 4.7),
-    Place(name: 'Museu Histórico Abílio Barreto', category: 'Histórico', rating: 4.5),
-    Place(name: 'Museu de Ciências Naturais', category: 'Cultural', rating: 4.6),
+    Place(
+        name: 'Centro Cultural Banco do Brasil',
+        category: 'Cultural',
+        rating: 4.7),
+    Place(
+        name: 'Museu Histórico Abílio Barreto',
+        category: 'Histórico',
+        rating: 4.5),
+    Place(
+        name: 'Museu de Ciências Naturais', category: 'Cultural', rating: 4.6),
     Place(name: 'Restaurante Xapuri', category: 'Gastronomia', rating: 4.7),
     Place(name: 'Mercado Novo', category: 'Gastronomia', rating: 4.6),
     Place(name: 'Casa Fiat de Cultura', category: 'Cultural', rating: 4.8),
@@ -746,6 +711,7 @@ class _ExplorePageState extends State<ExplorePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const CustomAppBar(showSearch: true), // Exibe a busca no AppBar
+      appBar: const CustomAppBar(showSearch: true), // Exibe a busca no AppBar
       body: Column(
         children: [
           // Filtros de categoria com Checkboxes
@@ -781,6 +747,7 @@ class _ExplorePageState extends State<ExplorePage> {
         ],
       ),
       bottomNavigationBar: _buildBottomNavigationBar(context, _currentIndex),
+      bottomNavigationBar: _buildBottomNavigationBar(context, _currentIndex),
     );
   }
 }
@@ -808,9 +775,43 @@ class PopularDestinationsPage extends StatelessWidget {
           child: Column(
             children: const [
               Text(
+      appBar: const CustomAppBar(),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: const [
+              Text(
                 'Restaurantes Populares',
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
+              SizedBox(height: 20),
+              DestinationCardPage(
+                imageUrl: 'assets/restaurante1.jpg',
+                title: 'Restaurante 1621',
+                location: 'Centro, Belo Horizonte',
+                reviews: 2776,
+                description:
+                    'Uma experiência gastronômica única, com um ambiente acolhedor e culinária excepcional.',
+              ),
+              DestinationCardPage(
+                imageUrl: 'assets/restaurante2.jpeg',
+                title: 'Northcote Restaurant',
+                location: 'Pampulha, Belo Horizonte',
+                reviews: 2020,
+                description:
+                    'Experimente pratos deliciosos preparados por renomados chefs em um ambiente elegante.',
+              ),
+              DestinationCardPage(
+                imageUrl: 'assets/restaurante3.jpeg',
+                title: 'Casa Vigil',
+                location: 'Savassi, Belo Horizonte',
+                reviews: 1490,
+                description:
+                    'Desfrute de uma experiência única em uma vinícola localizada no coração de BH.',
+              ),
+            ],
+          ),
               SizedBox(height: 20),
               DestinationCardPage(
                 imageUrl: 'assets/restaurante1.jpg',
@@ -866,9 +867,11 @@ class DestinationCardPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 10),
+      margin: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Imagem ajustável
           // Imagem ajustável
           Container(
             width: MediaQuery.of(context).size.width * 0.3, // 30% da largura da tela
@@ -885,6 +888,7 @@ class DestinationCardPage extends StatelessWidget {
             ),
           ),
           // Conteúdo textual flexível
+          // Conteúdo textual flexível
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(12.0),
@@ -894,6 +898,11 @@ class DestinationCardPage extends StatelessWidget {
                   Text(
                     title,
                     style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1, // Limita o título a uma linha
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -919,7 +928,12 @@ class DestinationCardPage extends StatelessWidget {
                   Row(
                     children: [
                       const Icon(Icons.star, color: Colors.orange, size: 16),
+                      const Icon(Icons.star, color: Colors.orange, size: 16),
                       const SizedBox(width: 5),
+                      Text(
+                        '$reviews avaliações',
+                        style: const TextStyle(color: Colors.grey),
+                      ),
                       Text(
                         '$reviews avaliações',
                         style: const TextStyle(color: Colors.grey),
@@ -930,7 +944,9 @@ class DestinationCardPage extends StatelessWidget {
                   Text(
                     description,
                     style: const TextStyle(fontSize: 14),
+                    style: const TextStyle(fontSize: 14),
                     overflow: TextOverflow.ellipsis,
+                    maxLines: 2, // Limita a descrição a duas linhas
                     maxLines: 2, // Limita a descrição a duas linhas
                   ),
                 ],
@@ -938,11 +954,67 @@ class DestinationCardPage extends StatelessWidget {
             ),
           ),
           // Ícone de favorito
+          // Ícone de favorito
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: IconButton(
-              icon: const Icon(Icons.favorite_border),
-              onPressed: () {},
+            child: StatefulBuilder(
+              builder: (context, setState) {
+                // Variável para controlar se o destino está favoritado
+                bool isFavorited = false;
+
+                // Função para adicionar/remover dos favoritos
+                Future<void> _toggleFavorite() async {
+                  // Verifique se o usuário está logado
+                  final userEmail =
+                      ModalRoute.of(context)!.settings.arguments as String?;
+                  if (userEmail == null) {
+                    // Exibe o popup caso o usuário não esteja logado
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                            'Você deve estar logado para poder adicionar pontos turísticos aos seus favoritos!'),
+                        duration: Duration(seconds: 3),
+                      ),
+                    );
+                    return;
+                  }
+
+                  // Atualiza os favoritos no banco de dados
+                  final db = await DatabaseHelper().database;
+                  final user = await db.query('users',
+                      where: 'email = ?', whereArgs: [userEmail]);
+                  if (user.isNotEmpty) {
+                    final currentUser = TelaCadastro.User.fromMap(user.first);
+                    final List<String> favorites = currentUser.favorites;
+
+                    if (isFavorited) {
+                      favorites.remove(title);
+                    } else {
+                      favorites.add(title);
+                    }
+
+                    await db.update(
+                      'users',
+                      {'favorites': jsonEncode(favorites)},
+                      where: 'email = ?',
+                      whereArgs: [userEmail],
+                    );
+
+                    // Atualiza o estado da UI
+                    setState(() {
+                      isFavorited = !isFavorited;
+                    });
+                  }
+                }
+
+                return IconButton(
+                  icon: Icon(
+                    isFavorited ? Icons.favorite : Icons.favorite_border,
+                    color: isFavorited ? Colors.red : null,
+                  ),
+                  onPressed: _toggleFavorite,
+                );
+              },
             ),
           ),
         ],
@@ -957,7 +1029,7 @@ class AboutPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return  Scaffold(
+    return Scaffold(
       appBar: const CustomAppBar(),
       body: const SingleChildScrollView(
         child: Padding(
@@ -1059,7 +1131,91 @@ class TeamMember extends StatelessWidget {
   }
 }
 
+class Review {
+  final int? id;
+  final String placeName;
+  final String reviewText;
+  final int rating;
+  final String? imagePath;
 
+  Review({
+    this.id,
+    required this.placeName,
+    required this.reviewText,
+    required this.rating,
+    this.imagePath,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'placeName': placeName,
+      'reviewText': reviewText,
+      'rating': rating,
+      'imagePath': imagePath,
+    };
+  }
+
+  factory Review.fromMap(Map<String, dynamic> map) {
+    return Review(
+      id: map['id'],
+      placeName: map['placeName'],
+      reviewText: map['reviewText'],
+      rating: map['rating'],
+      imagePath: map['imagePath'],
+    );
+  }
+}
+
+// Helper para gerenciar o banco de dados
+class DatabaseHelper {
+  static final DatabaseHelper _instance = DatabaseHelper._internal();
+  factory DatabaseHelper() => _instance;
+
+  DatabaseHelper._internal();
+
+  Database? _database;
+
+  Future<Database> get database async {
+    if (_database != null) return _database!;
+    _database = await _initDatabase();
+    return _database!;
+  }
+
+  Future<Database> _initDatabase() async {
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, 'reviews.db');
+
+    return openDatabase(
+      path,
+      version: 1,
+      onCreate: (db, version) async {
+        await db.execute('''
+          CREATE TABLE reviews (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            placeName TEXT,
+            reviewText TEXT,
+            rating INTEGER,
+            imagePath TEXT
+          )
+        ''');
+      },
+    );
+  }
+
+  Future<int> insertReview(Review review) async {
+    final db = await database;
+    return await db.insert('reviews', review.toMap());
+  }
+
+  Future<List<Review>> getAllReviews() async {
+    final db = await database;
+    final result = await db.query('reviews');
+    return result.map((map) => Review.fromMap(map)).toList();
+  }
+}
+
+// Tela principal
 class ReviewScreen extends StatefulWidget {
   @override
   _ReviewScreenState createState() => _ReviewScreenState();
@@ -1074,7 +1230,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
   // Método para selecionar uma imagem
   Future<void> _pickImage() async {
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
         _image = File(pickedFile.path);
@@ -1225,12 +1382,33 @@ class _ReviewScreenState extends State<ReviewScreen> {
           ),
         ),
       ),
+      bottomNavigationBar: _buildBottomNavigationBar(context, 4),
     );
   }
 }
 
+class UserProfileScreen extends StatefulWidget {
+  final String email;
+  const UserProfileScreen({Key? key, required this.email}) : super(key: key);
 
-class UserProfileScreen extends StatelessWidget {
+  @override
+  _UserProfileScreenState createState() => _UserProfileScreenState();
+}
+
+class _UserProfileScreenState extends State<UserProfileScreen> {
+  late Future<TelaCadastro.User?> _userData;
+
+  @override
+  void initState() {
+    super.initState();
+    _userData = _getUserData();
+  }
+
+  Future<TelaCadastro.User?> _getUserData() async {
+    final user = await TelaCadastro.DatabaseHelper().getUser(widget.email);
+    return user != null ? TelaCadastro.User.fromMap(user) : null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1238,168 +1416,81 @@ class UserProfileScreen extends StatelessWidget {
         title: const Text('Perfil do Usuário'),
         backgroundColor: Colors.orange,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            // Seção de cabeçalho com nome, foto e bio
-            Row(
+      body: FutureBuilder<TelaCadastro.User?>(
+        future: _userData,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError || !snapshot.hasData) {
+            return const Center(child: Text('Erro ao carregar dados'));
+          }
+
+          final user = snapshot.data!;
+          final String username = user.name;
+
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                CircleAvatar(
-                  radius: 50,
-                  backgroundImage: AssetImage('assets/profile.png'),
-                ),
-                const SizedBox(width: 20),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    const Text(
-                      'Nome de Usuário',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'Esta é uma bio interessante que fala um pouco sobre o usuário.',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white70,
-                      ),
-                    ),
-                  ],
-                ),
+                Text('Nome de Usuário: $username',
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 20),
+                const Text('Favoritos:',
+                    style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 10),
+                if (user.favorites.isNotEmpty)
+                  ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: user.favorites.length,
+                    itemBuilder: (context, index) {
+                      final placeName = user.favorites[index];
+                      return ListTile(
+                        leading: Icon(Icons.place, color: Colors.orange),
+                        title: Text(placeName),
+                        trailing: Icon(Icons.star, color: Colors.orange),
+                      );
+                    },
+                  )
+                else
+                  const Center(child: Text('Você ainda não tem favoritos')),
               ],
             ),
-            const SizedBox(height: 30),
-
-            // Seção de lugares favoritos
-            const Text(
-              'Lugares Favoritos',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: <Widget>[
-                Column(
-                  children: <Widget>[
-                    Image.asset(
-                      'assets/place1.jpeg',
-                      width: 100,
-                      height: 100,
-                      fit: BoxFit.cover,
-                    ),
-                    const SizedBox(height: 5),
-                    const Text(
-                      'Igrejinha da Pampulha',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-                Column(
-                  children: <Widget>[
-                    Image.asset(
-                      'assets/place2.jpeg',
-                      width: 100,
-                      height: 100,
-                      fit: BoxFit.cover,
-                    ),
-                    const SizedBox(height: 5),
-                    const Text(
-                      'Praça da Liberdade',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-                Column(
-                  children: <Widget>[
-                    Image.asset(
-                      'assets/place3.jpeg',
-                      width: 100,
-                      height: 100,
-                      fit: BoxFit.cover,
-                    ),
-                    const SizedBox(height: 5),
-                    const Text(
-                      'Pampulha',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 30),
-
-            // Seção de reviews anteriores
-            const Text(
-              'Reviews Recentes',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Expanded(
-              child: ListView(
-                children: <Widget>[
-                  _buildReviewTile('Igrejinha da Pampulha', 'Maravilhoso! achei muito linda, carrega muita história.', 5),
-                  _buildReviewTile('Praça da Liberdade', 'Praça linda que tem um jardim maravilhoso', 4),
-                  _buildReviewTile('Pampulha', 'Otimo para fazer caminhadas', 5),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      backgroundColor: Colors.blue.shade900,
-    );
-  }
-
-  // Função para construir o item de review
-  Widget _buildReviewTile(String place, String review, int rating) {
-    return Card(
-      color: Colors.white,
-      margin: const EdgeInsets.symmetric(vertical: 10),
-      child: ListTile(
-        title: Text(
-          place,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-        ),
-        subtitle: Text(
-          review,
-          style: const TextStyle(color: Colors.black54),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(5, (index) {
-            return Icon(
-              index < rating ? Icons.star : Icons.star_border,
-              color: Colors.orange,
-            );
-          }),
-        ),
+          );
+        },
       ),
     );
   }
+}
+
+// Função para construir o item de review
+Widget _buildReviewTile(String place, String review, int rating) {
+  return Card(
+    color: Colors.white,
+    margin: const EdgeInsets.symmetric(vertical: 10),
+    child: ListTile(
+      title: Text(
+        place,
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Colors.black,
+        ),
+      ),
+      subtitle: Text(
+        review,
+        style: const TextStyle(color: Colors.black54),
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: List.generate(5, (index) {
+          return Icon(
+            index < rating ? Icons.star : Icons.star_border,
+            color: Colors.orange,
+          );
+        }),
+      ),
+    ),
+  );
 }

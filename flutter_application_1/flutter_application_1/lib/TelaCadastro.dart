@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
@@ -12,6 +14,7 @@ class User {
   final String gender;
   final bool gmailNotifications;
   final bool whatsappNotifications;
+  final List<String> favorites;
 
   User({
     this.id,
@@ -23,6 +26,7 @@ class User {
     required this.gender,
     required this.gmailNotifications,
     required this.whatsappNotifications,
+    required this.favorites,
   });
 
   Map<String, dynamic> toMap() {
@@ -36,8 +40,24 @@ class User {
       'gender': gender,
       'gmailNotifications': gmailNotifications ? 1 : 0,
       'whatsappNotifications': whatsappNotifications ? 1 : 0,
+      'favorites': jsonEncode(favorites)
     };
   }
+
+  factory User.fromMap(Map<String, dynamic> map) {
+  return User(
+    id: map['id'],
+    email: map['email'],
+    name: map['username'],
+    password: map['password'], // Adicione esta linha se a tabela armazena senhas
+    birthDate: map['birthDate'],
+    phone: map['phone'],
+    gender: map['gender'],
+    gmailNotifications: map['gmailNotifications'],
+    whatsappNotifications: map['whatsappNotifications'],
+    favorites: List<String>.from(jsonDecode(map['favorites'] ?? '[]')),
+  );
+}
 }
 
 class DatabaseHelper {
@@ -72,11 +92,30 @@ class DatabaseHelper {
             password TEXT,
             gender TEXT,
             gmailNotifications INTEGER,
-            whatsappNotifications INTEGER
+            whatsappNotifications INTEGER,
+            favorites TEXT
           )
         ''');
       },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          // Adicionar a coluna favorites
+          await db.execute('ALTER TABLE users ADD COLUMN favorites TEXT');
+        }
+      },
     );
+  }
+
+   Future<int> updateUser(User user) async {
+    final db = await database;
+    return await db.update('users', user.toMap(),
+        where: 'email = ?', whereArgs: [user.email]);
+  }
+
+   Future<Map<String, dynamic>?> getUser(String email) async {
+    final db = await database;
+    final result = await db.query('users', where: 'email = ?', whereArgs: [email]);
+    return result.isNotEmpty ? result.first : null;
   }
 
   Future<int> insertUser(User user) async {
@@ -97,55 +136,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
   bool _gmail = false;
   bool _whatsapp = false;
 
-  final _nameController = TextEditingController();
-  final _birthDateController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final DatabaseHelper _dbHelper = DatabaseHelper();
-
-  void _switchPasswordVisibility() {
-    setState(() {
-      _obscureText = !_obscureText;
-    });
-  }
-
-  Future<void> _saveUser(BuildContext context) async {
-    if (_nameController.text.isEmpty ||
-        _birthDateController.text.isEmpty ||
-        _phoneController.text.isEmpty ||
-        _emailController.text.isEmpty ||
-        _passwordController.text.isEmpty ||
-        _radioSelected.isEmpty) {
-      // Usando o ScaffoldMessenger de forma correta dentro do contexto
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Por favor, preencha todos os campos!')),
-      );
-      return;
-    }
-
-    final newUser = User(
-      name: _nameController.text,
-      birthDate: _birthDateController.text,
-      phone: _phoneController.text,
-      email: _emailController.text,
-      password: _passwordController.text,
-      gender: _radioSelected,
-      gmailNotifications: _gmail,
-      whatsappNotifications: _whatsapp,
-    );
-
-    await _dbHelper.insertUser(newUser);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Usuário cadastrado com sucesso!')),
-    );
-
-    _nameController.clear();
-    _birthDateController.clear();
-    _phoneController.clear();
-    _emailController.clear();
-    _passwordController.clear();
+  void _switchPasswordVisibility(){
     setState(() {
       _radioSelected = '';
       _gmail = false;
