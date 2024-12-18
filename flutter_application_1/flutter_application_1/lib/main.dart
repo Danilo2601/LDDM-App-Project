@@ -1060,6 +1060,91 @@ class TeamMember extends StatelessWidget {
 }
 
 
+class Review {
+  final int? id;
+  final String placeName;
+  final String reviewText;
+  final int rating;
+  final String? imagePath;
+
+  Review({
+    this.id,
+    required this.placeName,
+    required this.reviewText,
+    required this.rating,
+    this.imagePath,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'placeName': placeName,
+      'reviewText': reviewText,
+      'rating': rating,
+      'imagePath': imagePath,
+    };
+  }
+
+  factory Review.fromMap(Map<String, dynamic> map) {
+    return Review(
+      id: map['id'],
+      placeName: map['placeName'],
+      reviewText: map['reviewText'],
+      rating: map['rating'],
+      imagePath: map['imagePath'],
+    );
+  }
+}
+
+// Helper para gerenciar o banco de dados
+class DatabaseHelper {
+  static final DatabaseHelper _instance = DatabaseHelper._internal();
+  factory DatabaseHelper() => _instance;
+
+  DatabaseHelper._internal();
+
+  Database? _database;
+
+  Future<Database> get database async {
+    if (_database != null) return _database!;
+    _database = await _initDatabase();
+    return _database!;
+  }
+
+  Future<Database> _initDatabase() async {
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, 'reviews.db');
+
+    return openDatabase(
+      path,
+      version: 1,
+      onCreate: (db, version) async {
+        await db.execute('''
+          CREATE TABLE reviews (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            placeName TEXT,
+            reviewText TEXT,
+            rating INTEGER,
+            imagePath TEXT
+          )
+        ''');
+      },
+    );
+  }
+
+  Future<int> insertReview(Review review) async {
+    final db = await database;
+    return await db.insert('reviews', review.toMap());
+  }
+
+  Future<List<Review>> getAllReviews() async {
+    final db = await database;
+    final result = await db.query('reviews');
+    return result.map((map) => Review.fromMap(map)).toList();
+  }
+}
+
+// Tela principal
 class ReviewScreen extends StatefulWidget {
   @override
   _ReviewScreenState createState() => _ReviewScreenState();
@@ -1225,6 +1310,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
           ),
         ),
       ),
+      bottomNavigationBar: _buildBottomNavigationBar(context, 4),
     );
   }
 }
@@ -1369,6 +1455,7 @@ class UserProfileScreen extends StatelessWidget {
           ],
         ),
       ),
+            bottomNavigationBar: _buildBottomNavigationBar(context, 5),
       backgroundColor: Colors.blue.shade900,
     );
   }
