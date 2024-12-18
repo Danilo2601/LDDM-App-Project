@@ -1,6 +1,32 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/LoginPage.dart';
+import 'TelaCadastro.dart' as TelaCadastro;
 
-class UserProfileScreen extends StatelessWidget {
+class UserProfileScreen extends StatefulWidget {
+  final int userId;  // O ID do usuário logado será passado para essa tela
+  const UserProfileScreen({Key? key, required this.userId}) : super(key: key);
+
+  @override
+  _UserProfileScreenState createState() => _UserProfileScreenState();
+}
+
+class _UserProfileScreenState extends State<UserProfileScreen> {
+  late Future<Map<String, dynamic>?> _userData;
+
+  @override
+  void initState() {
+    super.initState();
+    // Verificar se o usuário está logado. Caso contrário, redireciona para a tela de login
+    _userData = _getUserData();
+  }
+
+  // Método para buscar os dados do usuário logado
+  Future<Map<String, dynamic>?> _getUserData() async {
+    final userData = await TelaCadastro.DatabaseHelper().getUser(widget.userId);
+    return userData;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -8,167 +34,64 @@ class UserProfileScreen extends StatelessWidget {
         title: const Text('Perfil do Usuário'),
         backgroundColor: Colors.orange,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            // Seção de cabeçalho com nome, foto e bio
-            Row(
-              children: <Widget>[
-                CircleAvatar(
-                  radius: 50,
-                  backgroundImage: AssetImage('assets/profile.png'),
-                ),
-                const SizedBox(width: 20),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    const Text(
-                      'Nome de Usuário',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'Esta é uma bio interessante que fala um pouco sobre o usuário.',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white70,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 30),
-
-            // Seção de lugares favoritos
-            const Text(
-              'Lugares Favoritos',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+      body: FutureBuilder<Map<String, dynamic>?>(  // FutureBuilder para buscar dados do usuário
+        future: _userData,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError || !snapshot.hasData) {
+            // Se o usuário não estiver logado, redireciona para a tela de login
+            return Center(
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoginPage()),
+                  );
+                },
+                child: const Text('Faça o login para acessar o perfil'),
               ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: <Widget>[
-                Column(
-                  children: <Widget>[
-                    Image.asset(
-                      'assets/place1.jpeg',
-                      width: 100,
-                      height: 100,
-                      fit: BoxFit.cover,
-                    ),
-                    const SizedBox(height: 5),
-                    const Text(
-                      'Igrejinha da Pampulha',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-                Column(
-                  children: <Widget>[
-                    Image.asset(
-                      'assets/place2.jpeg',
-                      width: 100,
-                      height: 100,
-                      fit: BoxFit.cover,
-                    ),
-                    const SizedBox(height: 5),
-                    const Text(
-                      'Praça da Liberdade',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-                Column(
-                  children: <Widget>[
-                    Image.asset(
-                      'assets/place3.jpeg',
-                      width: 100,
-                      height: 100,
-                      fit: BoxFit.cover,
-                    ),
-                    const SizedBox(height: 5),
-                    const Text(
-                      'Pampulha',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 30),
-
-            // Seção de reviews anteriores
-            const Text(
-              'Reviews Recentes',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Expanded(
-              child: ListView(
-                children: <Widget>[
-                  _buildReviewTile('Igrejinha da Pampulha', 'Maravilhoso! achei muito linda, carrega muita história.', 5),
-                  _buildReviewTile('Praça da Liberdade', 'Praça linda que tem um jardim maravilhoso', 4),
-                  _buildReviewTile('Pampulha', 'Otimo para fazer caminhadas', 5),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      backgroundColor: Colors.blue.shade900,
-    );
-  }
-
-  // Função para construir o item de review
-  Widget _buildReviewTile(String place, String review, int rating) {
-    return Card(
-      color: Colors.white,
-      margin: const EdgeInsets.symmetric(vertical: 10),
-      child: ListTile(
-        title: Text(
-          place,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-        ),
-        subtitle: Text(
-          review,
-          style: const TextStyle(color: Colors.black54),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(5, (index) {
-            return Icon(
-              index < rating ? Icons.star : Icons.star_border,
-              color: Colors.orange,
             );
-          }),
-        ),
+          }
+
+          final user = snapshot.data!;
+          final String username = user['username'] ?? 'Nome não encontrado';
+          // Verifique se favoritos é uma lista de strings antes de decodificar
+          final favoritesJson = user['favorites'] ?? '[]';
+          final List<String> favorites = List<String>.from(jsonDecode(favoritesJson));
+
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                // Nome de Usuário
+                Text('Nome de Usuário: $username', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 20),
+
+                // Exibir Favoritos
+                const Text('Favoritos:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 10),
+                // Usando ListView sem Expanded para evitar problemas de layout
+                if (favorites.isNotEmpty)
+                  ListView.builder(
+                    shrinkWrap: true,  // Importante para não causar problemas de layout
+                    itemCount: favorites.length,
+                    itemBuilder: (context, index) {
+                      final placeName = favorites[index];
+                      return ListTile(
+                        leading: Icon(Icons.place, color: Colors.orange),
+                        title: Text(placeName),
+                        trailing: Icon(Icons.star, color: Colors.orange),
+                      );
+                    },
+                  )
+                else
+                  const Center(child: Text('Você ainda não tem favoritos')),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

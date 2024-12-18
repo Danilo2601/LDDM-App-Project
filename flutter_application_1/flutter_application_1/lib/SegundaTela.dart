@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class SegundaTela extends StatefulWidget{
+  const SegundaTela({super.key});
+
   @override
   _SegundaTelaState createState() => _SegundaTelaState();
 }
@@ -11,7 +13,7 @@ class _SegundaTelaState extends State<SegundaTela>{
   void _loadItems(){
     _items = [];
     for (int i = 0; i<21;i++){
-      Map<String, dynamic> item = Map();
+      Map<String, dynamic> item = {};
       item["Titulo"] = "Item $i ";
       item["Descrição"] = "Este é o item $i da lista";
       _items.add(item);
@@ -28,10 +30,10 @@ class _SegundaTelaState extends State<SegundaTela>{
       appBar: AppBar(
         title: Text("Bem vindo, ${valor.split('@')[0]}"), // Divide a string onde tem o '@' e pega a primeira parte(tudo que vem antes)
       ),
-      drawer: Drawer(),
+      drawer: const Drawer(),
       body: Container(
         child: ListView.builder(
-          padding: EdgeInsets.all(26),
+          padding: const EdgeInsets.all(26),
           itemCount: _items.length,
           itemBuilder: (context, index) {
             return ListTile(
@@ -40,15 +42,15 @@ class _SegundaTelaState extends State<SegundaTela>{
                   context: context,
                   builder: (BuildContext context){
                     return AlertDialog(
-                      title: Text("Alerta"),
+                      title: const Text("Alerta"),
                       content: Text("Você clicou no item $index"),
                       actions: [
                         TextButton(onPressed: (){
                           Navigator.of(context).pop();
-                        }, child: Text("Sim")),
+                        }, child: const Text("Sim")),
                         TextButton(onPressed: (){
                           Navigator.of(context).pop();
-                        }, child: Text("Não"))
+                        }, child: const Text("Não"))
                       ],
                     );
                   });

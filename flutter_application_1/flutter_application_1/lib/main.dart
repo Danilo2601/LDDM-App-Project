@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/LoginPage.dart';
 import 'package:flutter_application_1/review_page.dart';
 import 'package:flutter_application_1/user_profile_screen.dart';
+import 'TelaCadastro.dart' as TelaCadastro;
+import 'user_profile_screen.dart';
 
 
 void main() {
@@ -10,10 +14,11 @@ void main() {
 
 class MyTripWebsite extends StatelessWidget {
   const MyTripWebsite({super.key});
-  
-  
+
   @override
   Widget build(BuildContext context) {
+    final int userId = ModalRoute.of(context)!.settings.arguments as int;
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'My Trip App',
@@ -27,12 +32,13 @@ class MyTripWebsite extends StatelessWidget {
         '/popular': (context) => const PopularDestinationsPage(),
         '/about': (context) => const AboutPage(),
         '/login': (context) => LoginPage(),
-        '/search': (context) => ReviewScreen(),  // Supondo que seja o arquivo review_page.dart
-        '/profile': (context) =>  UserProfileScreen(), // Referenciando o arquivo de perfil
+        '/search': (context) => ReviewScreen(),
+        '/profile': (context) => UserProfileScreen(userId: userId ?? 0),
       },
     );
   }
 }
+
 
 
 BottomNavigationBar _buildBottomNavigationBar(BuildContext context, int currentIndex) {
@@ -53,10 +59,11 @@ BottomNavigationBar _buildBottomNavigationBar(BuildContext context, int currentI
           Navigator.of(context).pushReplacementNamed('/about');
           break;
         case 4:
-          Navigator.of(context).pushReplacementNamed('/search'); // Redireciona para ReviewPage
+          Navigator.of(context).pushReplacementNamed('/search');
           break;
         case 5:
-          Navigator.of(context).pushReplacementNamed('/profile'); // Redireciona para ProfilePage
+          // Aqui, passamos o userId ao navegar para o perfil
+          Navigator.of(context).pushReplacementNamed('/profile', arguments: 123);  // Passe o userId
           break;
       }
     },
@@ -65,8 +72,8 @@ BottomNavigationBar _buildBottomNavigationBar(BuildContext context, int currentI
       BottomNavigationBarItem(icon: Icon(Icons.explore), label: 'Explorar'),
       BottomNavigationBarItem(icon: Icon(Icons.star), label: 'Populares'),
       BottomNavigationBarItem(icon: Icon(Icons.info), label: 'Sobre'),
-      BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Pesquisa'), // Ícone de Pesquisa
-      BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),   // Ícone de Perfil
+      BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Pesquisa'),
+      BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
     ],
     selectedItemColor: Colors.yellow[700],
     unselectedItemColor: Colors.blue[900],
@@ -85,7 +92,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _currentIndex = 0; 
+  final int _currentIndex = 0; 
 
   @override
   Widget build(BuildContext context) {
@@ -93,24 +100,24 @@ class _HomePageState extends State<HomePage> {
     final email = ModalRoute.of(context)!.settings.arguments as String?;
 
     return Scaffold(
-      appBar: CustomAppBar(),
+      appBar: const CustomAppBar(),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            HeaderSection(),
+            const HeaderSection(),
             // Exibindo a saudação com o nome do usuário ou email
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: email != null 
                   ? Text(
                         "Bem-vindo, $email!",
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: Colors.orange,
                         ),
                       )
-                  : Text(
+                  : const Text(
                       "Bem-vindo, Usuário!",
                       style: TextStyle(
                         fontSize: 20,
@@ -119,11 +126,11 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
             ),
-            MapImageSection(),
-            ServicesSection(),
-            PopularDestinationsSection(),
-            ContactSection(),
-            Footer(),
+            const MapImageSection(),
+            const ServicesSection(),
+            const PopularDestinationsSection(),
+            const ContactSection(),
+            const Footer(),
           ],
         ),
       ),
@@ -193,9 +200,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                     children: [
                       const Icon(Icons.search, color: Colors.grey),
                       const SizedBox(width: 10),
-                      Expanded(
+                      const Expanded(
                         child: TextField(
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             border: InputBorder.none,
                             hintText: 'Lugares para ir, o que fazer, hotéis...',
                           ),
@@ -589,7 +596,7 @@ class _ExplorePageState extends State<ExplorePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(),
+      appBar: const CustomAppBar(),
       body: Column(
         children: [
           // Filtros de categoria com Checkboxes
@@ -646,7 +653,7 @@ class PopularDestinationsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(),
+      appBar: const CustomAppBar(),
       body: const SingleChildScrollView(
         child: Column(
           children: [
@@ -693,12 +700,13 @@ class PopularDestinationsPage extends StatelessWidget {
   }
 }
 
-class DestinationCardPage extends StatelessWidget {
+class DestinationCardPage extends StatefulWidget {
   final String imageUrl;
   final String title;
   final String location;
   final int reviews;
   final String description;
+  final int? userId; // ID do usuário logado (pode ser null se não estiver logado)
 
   const DestinationCardPage({
     super.key,
@@ -707,7 +715,77 @@ class DestinationCardPage extends StatelessWidget {
     required this.location,
     required this.reviews,
     required this.description,
+    this.userId, // ID do usuário (pode ser null)
   });
+
+  @override
+  _DestinationCardPageState createState() => _DestinationCardPageState();
+}
+
+class _DestinationCardPageState extends State<DestinationCardPage> {
+  bool _isFavorite = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFavoriteStatus(); // Carregar o status do favorito quando a tela for inicializada
+  }
+
+  // Função para carregar o status de favorito do usuário
+  Future<void> _loadFavoriteStatus() async {
+    if (widget.userId != null) {
+      final dbHelper = TelaCadastro.DatabaseHelper();
+      final userData = await dbHelper.getUser(widget.userId!);
+
+      if (userData != null) {
+        final List<String> favorites =
+            List<String>.from(jsonDecode(userData['favorites'] ?? '[]'));
+
+        setState(() {
+          // Verificar se o título (nome do destino) está nos favoritos
+          _isFavorite = favorites.contains(widget.title);
+        });
+      }
+    }
+  }
+
+  // Função para adicionar ou remover dos favoritos
+  Future<void> _toggleFavorite() async {
+    if (widget.userId == null) {
+      // Se o usuário não estiver logado, exibe um alerta
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("É preciso estar logado para adicionar um ponto turístico aos seus favoritos")),
+      );
+      return;
+    }
+
+    final dbHelper = TelaCadastro.DatabaseHelper();
+    final userData = await dbHelper.getUser(widget.userId!);
+
+    if (userData != null) {
+      final List<String> favorites =
+          List<String>.from(jsonDecode(userData['favorites'] ?? '[]'));
+
+      // Adiciona ou remove o destino dos favoritos
+      if (_isFavorite) {
+        favorites.remove(widget.title); // Remove do favorito
+      } else {
+        favorites.add(widget.title); // Adiciona ao favorito
+      }
+
+      // Atualiza os favoritos no banco de dados
+      await dbHelper.updateFavorites(widget.userId!, favorites);
+
+      setState(() {
+        _isFavorite = !_isFavorite; // Atualiza o estado do favorito
+      });
+
+      // Exibe uma mensagem para o usuário
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${widget.title} ${_isFavorite ? 'adicionado' : 'removido'} dos favoritos!')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -726,7 +804,7 @@ class DestinationCardPage extends StatelessWidget {
                 bottomLeft: Radius.circular(10),
               ),
               image: DecorationImage(
-                image: AssetImage(imageUrl),
+                image: AssetImage(widget.imageUrl),
                 fit: BoxFit.cover,
               ),
             ),
@@ -739,7 +817,7 @@ class DestinationCardPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    title,
+                    widget.title,
                     style: const TextStyle(
                         fontSize: 22, fontWeight: FontWeight.bold),
                   ),
@@ -748,7 +826,7 @@ class DestinationCardPage extends StatelessWidget {
                     children: [
                       const Icon(Icons.location_on, color: Colors.grey),
                       const SizedBox(width: 5),
-                      Text(location,
+                      Text(widget.location,
                           style: const TextStyle(color: Colors.grey)),
                     ],
                   ),
@@ -757,13 +835,13 @@ class DestinationCardPage extends StatelessWidget {
                     children: [
                       const Icon(Icons.star, color: Colors.orange, size: 18),
                       const SizedBox(width: 5),
-                      Text('$reviews avaliações',
+                      Text('${widget.reviews} avaliações',
                           style: const TextStyle(color: Colors.grey)),
                     ],
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    description,
+                    widget.description,
                     style: const TextStyle(fontSize: 16),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 3,
@@ -772,12 +850,15 @@ class DestinationCardPage extends StatelessWidget {
               ),
             ),
           ),
-          // Botão de salvar
+          // Botão de salvar (favoritar)
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: IconButton(
-              icon: const Icon(Icons.favorite_border),
-              onPressed: () {},
+              icon: Icon(
+                _isFavorite ? Icons.favorite : Icons.favorite_border,
+                color: Colors.red,
+              ),
+              onPressed: _toggleFavorite, // Adiciona ou remove dos favoritos
             ),
           ),
         ],

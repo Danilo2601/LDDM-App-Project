@@ -91,6 +91,8 @@ class DatabaseHelper {
 
 // Tela principal
 class ReviewScreen extends StatefulWidget {
+  const ReviewScreen({super.key});
+
   @override
   _ReviewScreenState createState() => _ReviewScreenState();
 }
@@ -119,7 +121,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
     if (placeName.isEmpty || reviewText.isEmpty || rating == 0) {
       ScaffoldMessenger.of(context as BuildContext).showSnackBar(
-        SnackBar(content: Text('Por favor, preencha todos os campos!')),
+        const SnackBar(content: Text('Por favor, preencha todos os campos!')),
       );
       return;
     }
@@ -134,7 +136,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
     await _dbHelper.insertReview(newReview);
 
     ScaffoldMessenger.of(context as BuildContext).showSnackBar(
-      SnackBar(content: Text('Review salva com sucesso!')),
+      const SnackBar(content: Text('Review salva com sucesso!')),
     );
 
     _placeNameController.clear();
@@ -149,7 +151,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Review Screen'),
+        title: const Text('Review Screen'),
         backgroundColor: Colors.orange,
       ),
       body: Padding(
@@ -161,7 +163,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
               // Campo de texto para o nome do lugar
               TextField(
                 controller: _placeNameController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Nome do Lugar',
                   labelStyle: TextStyle(color: Colors.orange),
                   filled: true,
@@ -173,15 +175,15 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     borderSide: BorderSide(color: Colors.orange),
                   ),
                 ),
-                style: TextStyle(color: Colors.black),
+                style: const TextStyle(color: Colors.black),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
 
               // Campo de texto para a review
               TextField(
                 controller: _reviewTextController,
                 maxLines: 3,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Escreva sobre o que achou',
                   labelStyle: TextStyle(color: Colors.orange),
                   filled: true,
@@ -193,12 +195,12 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     borderSide: BorderSide(color: Colors.orange),
                   ),
                 ),
-                style: TextStyle(color: Colors.black),
+                style: const TextStyle(color: Colors.black),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
 
               // Avaliação por estrelas
-              Text(
+              const Text(
                 'Avaliação:',
                 style: TextStyle(color: Colors.orange, fontSize: 16),
               ),
@@ -217,7 +219,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   );
                 }),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
 
               // Botão para adicionar imagem
               Row(
@@ -227,9 +229,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange,
                     ),
-                    child: Text('Adicione uma imagem'),
+                    child: const Text('Adicione uma imagem'),
                   ),
-                  SizedBox(width: 10),
+                  const SizedBox(width: 10),
                   _image != null
                       ? Image.file(
                           _image!,
@@ -239,7 +241,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                       : Container(),
                 ],
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
 
               // Botão para salvar a review
               Center(
@@ -248,7 +250,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange,
                   ),
-                  child: Text('Salvar Review'),
+                  child: const Text('Salvar Review'),
                 ),
               ),
             ],

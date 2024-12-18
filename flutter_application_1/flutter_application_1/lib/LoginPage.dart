@@ -3,6 +3,7 @@ import 'TelaCadastro.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
+
 // Modelo de usuário
 class User {
   final int? id;
@@ -78,6 +79,8 @@ class DatabaseHelper {
 }
 
 class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+
   @override
   _LoginPageState createState() => _LoginPageState();
 }
@@ -103,14 +106,14 @@ class _LoginPageState extends State<LoginPage> {
       context: context, // Usando o context fornecido pelo método Builder
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Erro de login'),
+          title: const Text('Erro de login'),
           content: Text(message),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text("Ok"),
+              child: const Text("Ok"),
             ),
           ],
         );
@@ -118,30 +121,32 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+
   // Método de validação de login
   Future<void> _validarLogin(BuildContext context) async {
-    String email = _emailController.text;
-    String senha = _passwordController.text;
+  String email = _emailController.text;
+  String senha = _passwordController.text;
 
-    final user = await _dbHelper.getUserByEmail(email);
+  final user = await _dbHelper.getUserByEmail(email);
 
-    if (user == null) {
-      _showErrorDialog(context, "Email não encontrado.");
-    } else if (user.password != senha) {
-      _showErrorDialog(context, "Senha incorreta.");
-    } else {
-      Navigator.of(context).pushNamed("/", arguments: email);
-    }
+  if (user == null) {
+    _showErrorDialog(context, "Email não encontrado.");
+  } else if (user.password != senha) {
+    _showErrorDialog(context, "Senha incorreta.");
+  } else {
+    // Passar o userId para a HomePage
+    Navigator.of(context).pushReplacementNamed("/", arguments: user.id);
   }
+}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Login"),
+        title: const Text("Login"),
         backgroundColor: Colors.orange,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -149,13 +154,13 @@ class _LoginPageState extends State<LoginPage> {
       body: Center(
         child: Builder(
           builder: (BuildContext context) {
-            return Container(
+            return SizedBox(
               width: 300,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // Texto "TrailGuide"
-                  Text(
+                  const Text(
                     'TrailGuide',
                     style: TextStyle(
                       fontSize: 32,
@@ -163,11 +168,11 @@ class _LoginPageState extends State<LoginPage> {
                       color: Colors.white,
                     ),
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
                   // Ícone de pessoa com borda laranja
                   Container(
-                    padding: EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
@@ -176,33 +181,33 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       color: Colors.blue[900],
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.person,
                       size: 80,
                       color: Colors.white,
                     ),
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
                   // Campo de email
                   TextField(
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: "Email",
                       border: OutlineInputBorder(),
                       filled: true,
                       fillColor: Colors.white,
                     ),
-                    style: TextStyle(color: Colors.black, fontSize: 16),
+                    style: const TextStyle(color: Colors.black, fontSize: 16),
                     keyboardType: TextInputType.emailAddress,
                     controller: _emailController,
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
                   // Campo de senha
                   TextField(
                     decoration: InputDecoration(
                       labelText: "Senha",
-                      border: OutlineInputBorder(),
+                      border: const OutlineInputBorder(),
                       filled: true,
                       fillColor: Colors.white,
                       suffixIcon: IconButton(
@@ -212,15 +217,15 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-                    style: TextStyle(color: Colors.black, fontSize: 16),
+                    style: const TextStyle(color: Colors.black, fontSize: 16),
                     controller: _passwordController,
                     obscureText: _obscureText,
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
                   // Checkbox "Lembrar de mim"
                   CheckboxListTile(
-                    title: Text(
+                    title: const Text(
                       "Lembrar de mim?",
                       style: TextStyle(color: Colors.white),
                     ),
@@ -233,24 +238,24 @@ class _LoginPageState extends State<LoginPage> {
                     checkColor: Colors.black,
                     activeColor: Colors.white,
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
                   // Botão de login
                   ElevatedButton(
-                    onPressed: () => _validarLogin(context), // Passando o context correto
-                    child: Text("Entrar"),
+                    onPressed: () => _validarLogin(context),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange,
                       foregroundColor: Colors.white,
-                    ),
+                    ), // Passando o context correto
+                    child: Text("Entrar"),
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
                   // Link para criar nova conta
                   RichText(
                     text: TextSpan(
                       text: "Não tem conta? ",
-                      style: TextStyle(color: Colors.white),
+                      style: const TextStyle(color: Colors.white),
                       children: [
                         WidgetSpan(
                           child: GestureDetector(
