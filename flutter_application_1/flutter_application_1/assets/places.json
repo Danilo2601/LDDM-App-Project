@@ -1,0 +1,23 @@
+[
+    {"name": "Igreja da Pampulha", "category": "Cultural", "lat": -19.8586, "lng": -43.9842},
+    {"name": "Parque Municipal", "category": "Parque", "lat": -19.9212, "lng": -43.9377},
+    {"name": "Mercado Central", "category": "Compras", "lat": -19.9222, "lng": -43.9375},
+    {"name": "Praça da Liberdade", "category": "Histórico", "lat": -19.932056, "lng": -43.937378},
+    {"name": "Mineirão", "category": "Esportivo", "lat": -19.8651, "lng": -43.9716},
+    {"name": "Mirante Mangabeiras", "category": "Parque", "lat": -19.9499, "lng": -43.9133},
+    {"name": "Inhotim", "category": "Cultural", "lat": -20.1251, "lng": -44.0559},
+    {"name": "Feira Hippie", "category": "Compras", "lat": -19.9244, "lng": -43.9337},
+    {"name": "Palácio das Artes", "category": "Cultural", "lat": -19.9225, "lng": -43.9385},
+    {"name": "Lagoa da Pampulha", "category": "Natureza", "lat": -19.8534, "lng": -43.9761},
+    {"name": "Parque das Mangabeiras", "category": "Parque", "lat": -19.9496, "lng": -43.9152},
+    {"name": "Savassi", "category": "Vida Noturna", "lat": -19.9338, "lng": -43.9296},
+    {"name": "Museu de Arte da Pampulha", "category": "Cultural", "lat": -19.8582, "lng": -43.9837},
+    {"name": "Centro Cultural Banco do Brasil", "category": "Cultural", "lat": -19.9323, "lng": -43.9382},
+    {"name": "Museu Histórico Abílio Barreto", "category": "Histórico", "lat": -19.9374, "lng": -43.9409},
+    {"name": "Museu de Ciências Naturais", "category": "Cultural", "lat": -19.9350, "lng": -43.9815},
+    {"name": "Restaurante Xapuri", "category": "Gastronomia", "lat": -19.8595, "lng": -43.9783},
+    {"name": "Mercado Novo", "category": "Gastronomia", "lat": -19.9216, "lng": -43.9406},
+    {"name": "Casa Fiat de Cultura", "category": "Cultural", "lat": -19.9329, "lng": -43.9387},
+    {"name": "Café com Letras", "category": "Gastronomia", "lat": -19.9328, "lng": -43.9295}
+  ]
+  
